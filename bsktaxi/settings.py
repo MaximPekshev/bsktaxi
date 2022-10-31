@@ -103,7 +103,7 @@ MEDIA_URL = '/media/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 CRONJOBS = [
-    # ('30 0 * * *', 'taxiapp.cron.creating_working_days'),
-    # ('55 2 * * *', 'taxiapp.cron.transactions_yandex'),
+    ('30 0 * * *', 'taxiapp.cron.creating_working_days'),
+    ('55 2 * * *', 'taxiapp.cron.transactions_yandex'),
     # ('55 3 * * *', 'taxiapp.cron.yandex_transactions'),
 ]
