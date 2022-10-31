@@ -1,0 +1,178 @@
+{% extends 'taxiapp/base_taxi.html' %}
+
+
+{% load static %}
+
+{% block content %}
+
+<section class="ls ms">
+	
+  <div class="container col-lg-12">
+    <div class="row">
+      <div class="col-lg-12 col-12">
+        <a href="{% url 'taxi_show_index' %}" class="theme_button color1"><i class="rt-icon2-home"></i></a>
+        <a href="{% url 'taxi_show_car_costs' %}" class="theme_button">Расходы</a>
+        <a href="" class="theme_button color1" data-toggle="modal" data-target="#new-cost-item"><i class="rt-icon2-add"></i></a>
+      </div>
+    </div>
+  </div> 
+
+  <div class="container col-lg-12">
+      <div class="row">
+          <div class="col-sm-12">
+                <table class="table_template darklinks table-hover">
+                  <thead class="thead-dark">
+                    <tr>
+        			<th>#</th>
+        			<th>Статья затрат</th>
+                  </thead>
+                  <tbody>
+
+                  	{% for cost_item in cost_items_tab %}
+                  		<tr {% if cost_item.is_category %} data-toggle="collapse" data-target="#demo{{cost_item.slug}}" style="background-color:#FFFFB7;" {% endif %}>
+                  			<td style="width: 30px;">{{ forloop.counter }}</td>
+                  			<td><a href="" data-toggle="modal" data-target="#id{{cost_item.slug}}">{{ cost_item }}</a></td>
+                  		</tr>
+                  		{% if cost_item.is_category %}
+                  		<tr>
+            				<td colspan="6" style="padding: 0 !important;">
+            					<div class="accordian-body collapse" id="demo{{cost_item.slug}}"> 
+            						<table>
+            							{% for ch_citem in cost_item.get_childs %}
+            							<tr>
+            								<td style="width: 100px;"></td>
+            								<td ><a href="" data-toggle="modal" data-target="#id{{ch_citem.slug}}">{{ ch_citem }}</a></td>
+            							</tr>
+            							{% endfor %}
+            						</table>
+            					</div> 
+            				</td>
+            			</tr>
+            			{% endif %}
+                  	{% endfor %}
+                  </tbody>
+                </table>
+          </div>
+      </div>
+  </div>
+
+</section>
+
+<div class="modal" id="new-cost-item" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenteredLabel" aria-hidden="true">
+	<div class="modal-dialog" role="document">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="text-uppercase pt-3"> Новая статья затрат </h5>
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+					<span aria-hidden="true">&times;</span>
+				</button>
+			</div>
+			<div class="modal-body col-lg-12 col-12">
+				<form id="add_cost_item" class="form" action="{% url 'taxi_add_cost_items' %}" method="POST">
+					{% csrf_token %}
+					<div class="form-group row">
+						<label for="inputTitle" class="col-sm-3 col-form-label pb-2">Наименование</label>
+						<div class="col-sm-9 pb-2">
+							<input type="text" name="cost_item" class="form-control" id="inputTitle" placeholder="Статья затрат" required>
+						</div>
+						<label for="inputParentItem" class="col-sm-3 col-form-label pb-2">Родитель</label>
+						<div class="col-sm-9 pb-2">
+							<select class="form-control" id="inputParentItem" name="parent_cost_item" form="add_cost_item"> 
+							<option selected value="">...</option>
+							{% for item in cost_items %}
+							{% if item.is_category %}
+							<option value="{{ item }}">{{ item }}</option>
+							{% endif %}
+							{% endfor %}
+							</select> 
+						</div>
+						<div class="col-sm-12 pb-2">
+							<div class="form-group validate-required" id="active">
+								<div class="container-fluid flex-row">
+									<div class="d-flex flex-row-reverse">  
+										<ul class="ks-cboxtags ">
+											<li class="">
+												<input type="checkbox" id="checkboxActive" value="AC" name="is_category" checked form="add_cost_item">
+												<label for="checkboxActive">Категория</label>
+											</li>
+										</ul> 
+									</div> 
+								</div> 
+							</div>
+						</div>
+					</div>							 
+				</form> 
+			</div>
+			<div class="modal-footer col-lg-12 col-12">
+				<a class="theme_button" href="#" data-dismiss="modal">Отмена</a>
+
+				<button class="theme_button color1" type="submit" form="add_cost_item">СОХРАНИТЬ </button>
+			</div>
+		</div>
+	</div>
+</div>
+
+{% for cost_item in cost_items %}
+<div class="modal" id="id{{cost_item.slug}}" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenteredLabel" aria-hidden="true">
+	<div class="modal-dialog" role="document">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="text-uppercase pt-3"> Редактировать статью затрат </h5>
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+					<span aria-hidden="true">&times;</span>
+				</button>
+			</div>
+			<div class="modal-body col-lg-12 col-12">
+				<form id="edit_cost_item{{ cost_item.slug }}" class="form" action="{% url 'taxi_edit_cost_items' slug=cost_item.slug %}" method="POST">
+					{% csrf_token %}
+					<div class="form-group row">
+						<label for="inputTitle" class="col-sm-3 col-form-label pb-2">Наименование</label>
+						<div class="col-sm-9 pb-2">
+							<input type="text" name="cost_item" class="form-control" id="inputTitle" placeholder="Статья затрат" value="{{ cost_item }}" required>
+						</div>
+						{% if not cost_item.is_category %}
+						<label for="inputParentItem" class="col-sm-3 col-form-label pb-2">Родитель</label>
+						<div class="col-sm-9 pb-2">
+							<select class="form-control" id="inputParentItem" name="parent_cost_item" form="edit_cost_item{{ cost_item.slug }}"> 
+							{% if cost_item.parent_item %}
+							<option selected value="{{ cost_item.parent_item }}">{{ cost_item.parent_item }}</option>
+							{% else %}
+							<option selected value="">...</option>
+							{% endif %}
+							{% for item in cost_items %}
+							{% if item.is_category %}
+							<option value="{{ item }}">{{ item }}</option>
+							{% endif %}
+							{% endfor %}
+							</select> 
+						</div>
+						{% endif %}
+						{% if not cost_item.parent_item %}
+						<div class="col-sm-12 pb-2">
+							<div class="form-group validate-required " id="active">
+								<div class="container-fluid flex-row">
+									<div class="d-flex flex-row-reverse">  
+										<ul class="ks-cboxtags ">
+											<li class="">
+												<input type="checkbox" id="checkbox{{ cost_item.slug }}" name="is_category" {% if cost_item.is_category == True %} checked {% endif %} form="edit_cost_item{{ cost_item.slug }}">
+												<label for="checkbox{{ cost_item.slug }}">Категория</label>
+											</li>
+										</ul> 
+									</div> 
+								</div> 
+							</div>
+						</div>
+						{% endif %}
+					</div>							 
+				</form> 
+			</div>
+			<div class="modal-footer col-lg-12 col-12">
+				<a class="theme_button" href="#" data-dismiss="modal">Отмена</a>
+
+				<button class="theme_button color1" type="submit" form="edit_cost_item{{ cost_item.slug }}">СОХРАНИТЬ </button>
+			</div>
+		</div>
+	</div>
+</div>
+{% endfor %}
+{% endblock %}

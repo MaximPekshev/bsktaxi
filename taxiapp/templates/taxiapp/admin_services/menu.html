@@ -1,0 +1,165 @@
+{% extends 'taxiapp/base_taxi.html' %}
+
+{% load static %}
+
+{% block content %}
+<div id="preloader" class="hidden">
+    <div class="preloader_image"></div>
+</div>
+<section class="ls ms" id="service_form">
+    <div class="container col-lg-12">
+        <div class="row justify-content-center">
+          <div class="col-lg-5">
+            <ul class="nav nav-tabs" role="tablist">
+              <li class="active">
+                <a href="#tab1" role="tab" data-toggle="tab">Создание дней <br></a>
+              </li>
+              <li>
+                <a href="#tab2" role="tab" data-toggle="tab">Загрузка Яндекс <br></a>
+              </li>
+            </ul>
+    
+            <div class="tab-content top-color-border">
+                <div class="tab-pane fade in active" id="tab1">
+                    <div class="row">
+						<div class="col-sm-12">
+							<div class="contact-form cs parallax fullwidth-form row justify-content-center">
+								<div class="row justify-content-center">
+									<div class="col-sm-12">
+										<div class="contact-form-name" align="center">
+											<input id="WDDateInput" style="color: #000000;" type="date" aria-required="true" size="30" class="form-control" >
+										</div>
+                                        <div id="errorPlace"></div>
+									</div>
+									<div class="col-sm-12">
+                                        <div class="contact-form-name" align="center">
+											<button style="width: 100%;" id="wd_upload_button" class="theme_button">Создать</button>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+                </div>
+                <div class="tab-pane fade" id="tab2">
+                    <div class="row">
+						<div class="col-sm-12">
+							<div class="contact-form cs parallax fullwidth-form row justify-content-center">
+								<div class="row justify-content-center">
+									<div class="col-sm-12">
+										<div class="contact-form-name" align="center">
+											<input id="YADateInput" style="color: #000000;" type="date" aria-required="true" size="30" class="form-control" >
+										</div>
+                                        <div id="yandexErrorPlace"></div>
+									</div>
+									<div class="col-sm-12">
+                                        <div class="contact-form-name" align="center">
+											<button style="width: 100%;" id="ya_upload_button" class="theme_button">Загрузить из Яднекс</button>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+                </div>     
+            </div>
+            <div class="" align="right">
+                <a class="theme_button color1" href="{% url 'taxi_show_index' %}">Назад</a>
+            </div>
+
+        </div>
+
+    </div>            
+</section>    
+{% endblock %}
+
+{% block custom_scripts %}
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+<script type="text/javascript">
+    window.onload = function() {
+        document.getElementById('wd_upload_button').addEventListener('click', upload_working_days, false);
+        document.getElementById('ya_upload_button').addEventListener('click', upload_yandex, false);
+
+    }
+
+    const upload_working_days = async (event) => {
+        event.preventDefault();
+        let WDDateInput = document.getElementById('WDDateInput');
+        if (WDDateInput != null && WDDateInput.value !="") {
+            document.getElementById('errorPlace').innerHTML ='';
+
+            let preloaderEl = document.getElementById('preloader');
+            let serviceFormEl = document.getElementById('service_form');
+
+            preloaderEl.classList.add('visible');
+            preloaderEl.classList.remove('hidden');
+
+            serviceFormEl.classList.add('hidden');
+            serviceFormEl.classList.remove('visible');
+
+            let response = await axios.get(`/taxi/services/upload-working-day/${WDDateInput.value}/`)
+                .then(() => {
+
+                    preloaderEl.classList.remove('visible');
+                    preloaderEl.classList.add('hidden');
+
+                    serviceFormEl.classList.add('visible');
+                    serviceFormEl.classList.remove('hidden');
+
+                    document.getElementById('errorPlace').innerHTML =`<p style="color:blue; text-align: center;">Данные за ${WDDateInput.value} успешно загружены!</p>`;
+                }).catch((error) => {
+
+                    preloaderEl.classList.remove('visible');
+                    preloaderEl.classList.add('hidden');
+
+                    serviceFormEl.classList.add('visible');
+                    serviceFormEl.classList.remove('hidden');
+                    document.getElementById('errorPlace').innerHTML ='<p style="color:black; text-align: center;">Произошла ошибка на сервере!!</p>';
+                    console.log(error)
+                })
+        } else {
+            document.getElementById('errorPlace').innerHTML ='<p style="color:black; text-align: center;">Выберите дату!!</p>';
+        }
+    };
+
+    const upload_yandex = async (event) => {
+        event.preventDefault();
+        let YADateInput = document.getElementById('YADateInput');
+        if (YADateInput != null && YADateInput.value !="") {
+            document.getElementById('yandexErrorPlace').innerHTML ='';
+
+            let preloaderEl = document.getElementById('preloader');
+            let serviceFormEl = document.getElementById('service_form');
+
+            preloaderEl.classList.add('visible');
+            preloaderEl.classList.remove('hidden');
+
+            serviceFormEl.classList.add('hidden');
+            serviceFormEl.classList.remove('visible');
+
+            let response = await axios.get(`/taxi/services/upload-yandex/${YADateInput.value}/`)
+                .then(() => {
+                    let preloaderEl = document.getElementById('preloader');
+
+                    preloaderEl.classList.remove('visible');
+                    preloaderEl.classList.add('hidden');
+
+                    serviceFormEl.classList.add('visible');
+                    serviceFormEl.classList.remove('hidden');
+
+                    document.getElementById('yandexErrorPlace').innerHTML =`<p style="color:blue; text-align: center;">Данные за ${YADateInput.value} успешно загружены!</p>`;
+                }).catch((error) => {
+                    preloaderEl.classList.remove('visible');
+                    preloaderEl.classList.add('hidden');
+
+                    serviceFormEl.classList.add('visible');
+                    serviceFormEl.classList.remove('hidden');
+                    document.getElementById('yandexErrorPlace').innerHTML ='<p style="color:black; text-align: center;">Произошла ошибка на сервере!!</p>';
+                    console.log(error)
+                })
+        } else {
+            document.getElementById('yandexErrorPlace').innerHTML ='<p style="color:black; text-align: center;">Выберите дату!!</p>';
+        }
+    }
+</script>    
+{% endblock %}

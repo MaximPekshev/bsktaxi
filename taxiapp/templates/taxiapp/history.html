@@ -1,0 +1,123 @@
+{% extends 'taxiapp/base_taxi.html' %}
+
+
+{% block content %}
+
+  <section class="ls ms">
+
+  <div class="container col-lg-12">
+    <div class="row">
+      <div class="col-lg-12 col-12">
+        <a href="{% url 'taxi_show_index' %}" class="theme_button color1"><i class="rt-icon2-home"></i></a>
+      </div>
+      <div class="col-lg-12 col-12">
+        <form id="edit_period" method="POST" action="{% url 'taxi_show_history' %}">
+          {% csrf_token %}
+          <input class="date-as" type="date" id="start" name="trip_start" value="{{ date_lte }}" min="2018-01-01" required="">
+          <input class="date-as" type="date" id="end" name="trip_end" value="{{ date_now }}" min="2018-01-01" required="">
+          <button class="theme_button color1" type="submit" form="edit_period"><i class="rt-icon2-magnifier"></i></button>
+          {% for message in messages %}
+          <p  style="color: red" class="text-uppercase" >* {{ message }} </p>
+          {% endfor %}
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="container col-lg-12">
+    <div class="row">
+      <div class="col-lg-12">
+        <ul class="nav nav-tabs" role="tablist">
+          <li class="active">
+            <a href="#tab3" role="tab" data-toggle="tab">Водители</a>
+          </li>
+          <li>
+            <a href="#tab4" role="tab" data-toggle="tab">Рабочие дни</a>
+          </li>
+        </ul>
+
+        <div class="tab-content top-color-border">
+
+          <div class="tab-pane fade in active" id="tab3">
+            <table class="table_template darklinks table-hover">
+              <thead class="thead-dark">
+                <tr>
+                  <th>Дата изменения</th>
+                  <th>Изменено</th>
+                  <th></th>
+                  <th>Водитель</th>
+                  <th>Номер В/У</th>
+                  <th>Номер(NEW)</th>
+                  <th>Топливная карта</th>
+                  <th>Топливная карта 2</th>
+                  <th>Email</th>
+                  <th>Ставка</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for driver in d_history %}
+                <tr>
+                  <td>{{ driver.0.history_date }}</td>
+                  <td>{{ driver.0.history_user }}</td>
+                  <td></td>
+                  <td {% if driver.1 == True %}class="table-danger"{% endif %}>{{ driver.0.second_name }} {{ driver.0.first_name }}</td>
+                  <td {% if driver.2 == True %}class="table-danger"{% endif %}>{{ driver.0.driver_license }}</td>
+                  <td {% if driver.5 == True %}class="table-danger"{% endif %}>{% if driver.0.car %}{{ driver.0.car }}{% endif %}</td>
+                  <td {% if driver.4 == True %}class="table-danger"{% endif %}>{{ driver.0.fuel_card }}</td>
+                  <td {% if driver.6 == True %}class="table-danger"{% endif %}>{{ driver.0.fuel_card_2 }}</td>
+                  <td {% if driver.7 == True %}class="table-danger"{% endif %}>{{ driver.0.email }}</td>
+                  <td {% if driver.3 == True %}class="table-danger"{% endif %}>{{ driver.0.rate }}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          <div class="tab-pane fade" id="tab4">
+            <table class="table_template darklinks table-hover">
+              <thead class="thead-dark">
+                <tr>
+                  <th>Дата изменения</th>
+                  <th>Изменено</th>
+                  <th></th>
+                  <th>Дата</th>
+                  <th>Водитель</th>
+                  <th>Ставка</th>
+                  <th>ГСМ</th>
+                  <th>Штрафы</th>
+                  <th>Наличные</th>
+                  <th>Карта</th>
+                  <th>Безналичные</th>
+                  <th>Долг</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for day in work_day_hist %}
+                <tr>
+
+                  <td>{{ day.0.history_date }}</td>
+                  <th>{{ day.0.history_user }}</th>
+                  <td></td>
+                  <th>{{ day.0.date }}</th>
+                  <td>{{ day.0.driver.second_name }} {{ day.driver.first_name }}</td>
+                  <td {% if day.1 == True %}class="table-danger"{% endif %}>{{ day.0.rate }}</td>
+                  <td {% if day.2 == True %}class="table-danger"{% endif %}>{{ day.0.fuel }}</td>
+                  <td {% if day.3 == True %}class="table-danger"{% endif %}>{{ day.0.penalties }}</td>
+                  <td {% if day.4 == True %}class="table-danger"{% endif %}>{{ day.0.cash }}</td>
+                  <td {% if day.5 == True %}class="table-danger"{% endif %}>{{ day.0.cash_card }}</td>
+                  <td {% if day.6 == True %}class="table-danger"{% endif %}>{{ day.0.cashless }}</td>
+                  <td {% if day.7 == True %}class="table-danger"{% endif %}>{{ day.0.debt_of_day }}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+
+        </div>
+        </div>
+        
+      </div>
+    </div>
+  </div>
+</section>
+
+
+{% endblock %}

@@ -1,0 +1,94 @@
+{% extends 'taxiapp/base_taxi.html' %}
+
+
+{% block content %}
+
+<section class="ls ms">
+
+   <div class="container col-lg-12">
+    <div class="row">
+      <div class="col-lg-8 col-12">
+		<a href="{% url 'taxi_show_index' %}" class="theme_button color1"><i class="rt-icon2-home"></i></a>
+      </div>
+    </div>
+  </div> 
+  <div class="container col-lg-12">
+    <div class="row">
+      <div class="col-lg-12">
+
+        <ul class="nav nav-tabs" role="tablist">
+          <li class="active">
+            <a href="#tab1" role="tab" data-toggle="tab">Загружено <br></a>
+          </li>
+          <li>
+            <a href="#tab2" role="tab" data-toggle="tab">Ошибка!!! <br></a>
+          </li>
+        </ul>
+
+        <div class="tab-content top-color-border">
+          <div class="tab-pane fade in active" id="tab1">
+            <table class="table_template darklinks table-hover">
+              <thead class="thead-dark">
+                <tr>
+                  <th>#</th>
+                  <th>Дата</th>
+                  <th>Водитель</th>
+                  <th>Топливная карта</th>
+                  <th></th>
+                  <th>Сумма</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for tr in upload_transactions %}
+                <tr>
+                  <td>{{ forloop.counter }}</td>
+                  <td>{{ tr.0 }}</td>
+                  <td>{{ tr.1 }} {{ tr.2 }}</td>
+                  <td>{{ tr.3 }}</td>
+                  <td></td>
+                  <td>{{ tr.4 }}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          <div class="tab-pane fade" id="tab2">
+            <table class="table_template darklinks table-hover">
+              <thead class="thead-dark">
+                <tr>
+                  <th>Данные по топливным картам в базе данных не найдены!! Транзакции необходимо внести вручную.</th>
+                </tr>
+              </thead>
+            </table>
+            <table class="table_template darklinks table-hover">
+              <thead class="thead-dark">
+                <tr>
+                  <th>#</th>
+                  <th>Дата</th>
+                  <th>Топливная карта</th>
+                  <th></th>
+                  <th>Сумма</th>
+                  <th>Нет рабочих дней</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for md in missing_drivers %}
+                <tr>
+                  <td>{{ forloop.counter }}</td>
+                  <td>{{ md.0 }}</td>
+                  <td>{{ md.1 }}</td>
+                  <td></td>
+                  <td>{{ md.2 }}</td>
+                  <td>{% if md.3 %}<i class="rt-icon2-checkmark2"></i>{% else %}<i class="rt-icon2-cancel2"></i>{% endif %}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div> 
+        </div>
+      </div>
+    </div>
+  </div>
+</section> 
+
+{% endblock %}

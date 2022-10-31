@@ -1,0 +1,124 @@
+{% extends 'taxiapp/base_taxi.html' %}
+
+
+{% block content %}
+
+<section class="ls ms">
+	
+  <div class="container col-lg-12">
+    <div class="row">
+      <div class="col-lg-12 col-12">
+        <a href="{% url 'taxi_show_index' %}" class="theme_button color1"><i class="rt-icon2-home"></i></a>
+        <a href="" class="theme_button color1" data-toggle="modal" data-target="#new-car"><i class="rt-icon2-add"></i></i></a>
+      </div>
+    </div>
+  </div> 
+
+  <div class="container col-lg-12">
+    <div class="row">
+      <div class="col-sm-12">
+       <div class="table-responsive">
+        <table class="table_template darklinks table-hover">
+          <thead class="thead-dark">
+            <tr>
+              <th>Гос номер</th>
+              <th>Марка</th>
+              <th>Модель</th>
+            </tr>
+          </thead>
+          <tbody>
+           {% for car in cars %}
+           <tr>
+             <td><a href="" data-toggle="modal" data-target="#id{{car.slug}}">{{ car }}</a></td>
+             <td>{{ car.car_brand }}</td>
+             <td>{{ car.car_model }}</td>
+           </tr>
+           {% endfor %}
+         </tbody>
+       </table>
+     </div>
+   </div>
+ </div>
+</div>
+</section>
+
+
+<div class="modal" id="new-car" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenteredLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body col-lg-12 col-12">
+        <form id="new_car" class="form" action="{% url 'taxi_new_car' %}" method="POST">
+          {% csrf_token %}
+
+          <div class="form-group row">
+            <label for="input_car_number" class="col-sm-2 col-form-label pb-2">Гос номер</label>
+            <div class="col-sm-10 pb-2">
+              <input type="text" name="input_car_number" class="form-control" id="input_car_number" placeholder="Гос номер" value="" required="">
+            </div>
+            <label for="input_car_brand" class="col-sm-2 col-form-label pb-2">Марка</label>
+            <div class="col-sm-10 pb-2">
+              <input type="text" name="input_car_brand" class="form-control" id="input_car_brand" placeholder="Марка" value="">
+            </div>
+            <label for="input_car_model" class="col-sm-2 col-form-label pb-2">Модель</label>
+            <div class="col-sm-10 pb-2">
+              <input type="text" name="input_car_model" class="form-control" id="input_car_model" placeholder="Модель" value="">
+            </div>
+          </div>               
+        </form> 
+      </div>
+      <div class="modal-footer col-lg-12 col-12">
+        <a class="theme_button" href="#" data-dismiss="modal">Отмена</a>
+        <button class="theme_button color1" type="submit" form="new_car">СОХРАНИТЬ </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+{% for car in cars %}
+<div class="modal" id="id{{car.slug}}" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenteredLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body col-lg-12 col-12">
+        <form id="edit_car{{car.slug}}" class="form" action="{% url 'taxi_edit_car' slug=car.slug %}" method="POST">
+          {% csrf_token %}
+
+          <div class="form-group row">
+            <label for="input_car_number" class="col-sm-2 col-form-label pb-2">Гос номер</label>
+            <div class="col-sm-10 pb-2">
+              <input type="text" name="input_car_number" class="form-control" id="input_car_number" placeholder="Гос номер" value="{{ car.car_number }}" required="">
+            </div>
+            <label for="input_car_brand" class="col-sm-2 col-form-label pb-2">Марка</label>
+            <div class="col-sm-10 pb-2">
+              <input type="text" name="input_car_brand" class="form-control" id="input_car_brand" placeholder="Марка" value="{{ car.car_brand }}">
+            </div>
+            <label for="input_car_model" class="col-sm-2 col-form-label pb-2">Модель</label>
+            <div class="col-sm-10 pb-2">
+              <input type="text" name="input_car_model" class="form-control" id="input_car_model" placeholder="Модель" value="{{ car.car_model }}">
+            </div>
+          </div>               
+        </form> 
+      </div>
+      <div class="modal-footer col-lg-12 col-12">
+        <a class="theme_button" href="#" data-dismiss="modal">Отмена</a>
+        <button class="theme_button color1" type="submit" form="edit_car{{car.slug}}">СОХРАНИТЬ </button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endfor %}
+
+
+
+{% endblock %}

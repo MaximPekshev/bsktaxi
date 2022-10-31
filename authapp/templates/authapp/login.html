@@ -1,0 +1,43 @@
+{% extends 'taxiapp/base_taxi.html' %}
+
+{% block content %}
+
+<section class="ls section_padding_top_110 section_padding_bottom_75">
+	<div class="container">
+		<div class="row">
+			<div class="col-sm-12 text-center">
+				<h2 class="text-uppercase topmargin_5 bottommargin_25">БСК ТАКСИ</h2>
+				<form class="contact-form row columns_margin_0" method="POST" action="{% url 'login' %}">
+					{% csrf_token %}
+					<div class="col-sm-6">
+						<div class="contact-form-name form-group">
+							<label for="Login" class="sr-only">Login
+								<span class="required">*</span>
+							</label>
+							<input type="text" aria-required="true" size="30" value="" name="username" id="Login" class="form-control" placeholder="Введите ваш Login" required>
+						</div>
+					</div>
+					<div class="col-sm-6">
+						<div class="contact-form-subject form-group">
+							<label for="Password" class="sr-only">Password
+								<span class="required">*</span>
+							</label>
+							<input type="password" aria-required="true" size="30" value="" name="password" id="Password" class="form-control" placeholder="Введите ваш пароль" required>
+						</div>
+					</div>
+					<div class="col-sm-12">
+						{% for message in messages %}
+						<p  style="color: red" class="text-uppercase" >* {{ message }} </p>
+						{% endfor %}
+						<div class="contact-form-submit topmargin_10 bottommargin_25">
+							<button type="submit" id="contact_form_submit" name="contact_submit" class="theme_button color1 margin_0">Войти</button>
+						</div>
+					</div>
+				</form>
+
+			</div>
+		</div>
+	</div>
+</section>
+
+{% endblock %}

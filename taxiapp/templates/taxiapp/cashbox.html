@@ -1,0 +1,96 @@
+{% extends 'taxiapp/base_taxi.html' %}
+
+
+{% block content %}
+
+<section class="ls ms ">
+	<div class="container col-lg-12">
+		<div class="row">
+			<div class="col-lg-12 col-12">
+				<a href="{% url 'taxi_show_index' %}" class="theme_button color1"><i class="rt-icon2-home"></i></a>
+				{% if collector %}
+				<a href="" class="theme_button" data-toggle="modal" data-target="#incass">ИНКАССАЦИЯ</a>
+				{% endif %}
+			</div>
+		</div>
+	</div>
+	<div class="container col-lg-12">
+		<div class="row">
+			<div class="col-sm-12">
+				<table class="table_template darklinks table-hover">
+					<thead class="thead-dark">
+						<tr>
+							<th width="20%">Дата</th>
+							<th width="20%">Рабочий день</th>
+							<th width="40%">ФИО</th>
+							<th style="text-align: right">Наличные : {{ ca_cash }}</th>
+							<th style="text-align: right">Карта : {{ ca_cash_card }}</th>
+						</tr>
+					</thead>
+					<tbody>
+					{% for item in cashbox %}
+					{% if item.cash < 0 or item.cash_card < 0 %}
+						<tr class="table-danger">
+					{% else %}
+						<tr>
+					{% endif %}
+						<td>{{ item.date }}</td>
+						<td>{{ item.working_day.date }}</td>
+						<td>{{ item.working_day.driver.second_name }} {{ item.working_day.driver.first_name }} {{ item.working_day.driver.third_name }}</td>
+						<td style="text-align: right" >{{ item.cash }}</td>
+						<td style="text-align: right" >{{ item.cash_card }}</td>
+					{% endfor %}
+					</tbody>
+				</table>
+				{% if cashbox %}
+				<table class="table_template darklinks table-hover">
+					<thead class="thead-dark">
+						<tr>
+							<th style="text-align: right" width="80%">Остаток в кассе:</th>
+							<th style="text-align: right">{{ ca_cash }}</th>
+							<th style="text-align: right">{{ ca_cash_card }}</th>
+						</tr>
+					</thead>
+					<tbody>
+					</tbody>
+				</table>
+				{% endif %}
+			</div>
+		</div>
+	</div>
+</section>
+
+<div class="modal" id="incass" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenteredLabel" aria-hidden="true">
+	<div class="modal-dialog" role="document">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="text-uppercase pt-3">Инкассация</h5>
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+					<span aria-hidden="true">&times;</span>
+				</button>
+			</div>
+			<div class="modal-body col-lg-12 col-8">
+				<form id="idincass" class="form" action="{% url 'taxi_incass' %}" method="POST">
+					{% csrf_token %}
+					<div class="form-group row">
+						<label for="inputCash" class="col-sm-2 col-form-label pb-2">Наличные</label>
+						<div class="col-sm-10 pb-2">
+							<input type="text" name="input_cash" class="form-control" id="inputCash" placeholder="Наличные" value="">
+						</div>
+						<label for="inputCashCard" class="col-sm-2 col-form-label pb-2">Карта</label>
+						<div class="col-sm-10 pb-2">
+							<input type="text" name="input_cash_card" class="form-control" id="inputCashCard" placeholder="Карта" value="">
+						</div>
+					</div>							 
+				</form> 
+			</div>
+			<div class="modal-footer col-lg-12 col-8">
+				<a class="theme_button" href="#" data-dismiss="modal">Отмена</a>
+
+				<button class="theme_button color1" type="submit" form="idincass">СОХРАНИТЬ </button>
+			</div>
+		</div>
+	</div>
+</div>
+
+{% endblock %}
