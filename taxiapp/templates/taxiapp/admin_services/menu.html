@@ -97,7 +97,7 @@
             serviceFormEl.classList.add('hidden');
             serviceFormEl.classList.remove('visible');
 
-            let response = await axios.get(`/taxi/services/upload-working-day/${WDDateInput.value}/`)
+            let response = await axios.get(`/services/upload-working-day/${WDDateInput.value}/`)
                 .then(() => {
 
                     preloaderEl.classList.remove('visible');
@@ -137,7 +137,7 @@
             serviceFormEl.classList.add('hidden');
             serviceFormEl.classList.remove('visible');
 
-            let response = await axios.get(`/taxi/services/upload-yandex/${YADateInput.value}/`)
+            let response = await axios.get(`/services/upload-yandex/${YADateInput.value}/`)
                 .then(() => {
                     let preloaderEl = document.getElementById('preloader');
 
