@@ -8,8 +8,8 @@ SECRET_KEY = config('SECRET_KEY')
 
 DEBUG = config('DEBUG', cast=bool)
 
-ALLOWED_HOSTS = ['voronezh.bsktaxi.ru', 'www.voronezh.bsktaxi.ru', 'localhost', ]
-
+# ALLOWED_HOSTS = ['belgorod.bsktaxi.ru', 'www.belgorod.bsktaxi.ru', 'localhost', ]
+# ALLOWED_HOSTS = ['voronezh.bsktaxi.ru', 'www.voronezh.bsktaxi.ru', 'localhost', ]
 
 # Application definition
 
@@ -101,6 +101,8 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 MEDIA_URL = '/media/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+CRONTAB_DJANGO_PROJECT_NAME = config('CRONTAB_DJANGO_PROJECT_NAME')
 
 CRONJOBS = [
     ('30 0 * * *', 'taxiapp.cron.creating_working_days'),

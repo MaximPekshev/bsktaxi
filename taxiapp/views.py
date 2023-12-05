@@ -1,48 +1,38 @@
-import os
 from django.shortcuts import render, redirect
-from django.http import HttpResponse
-from .models import Driver, Car
-from .models import Working_day
-from .forms import NewDriverForm
-from .forms import Car_cost_form
+from django.http import HttpResponse, JsonResponse
 from django.contrib.auth.models import Group
 from django.contrib				import messages
+from django.db.models import Sum
+from django.utils import timezone
+from django.db.models import Sum
+from django.contrib.auth.models import Group
+
+import os
+import xlrd
+from datetime import datetime
+from decouple import config
+from decimal import Decimal
+
+from .models import Driver, Car
+from .models import Working_day
 from .models import Cashbox
 from .models import Cost_item
 from .models import Car_cost
-from django.db.models import Sum
-from datetime import datetime, timedelta
-
-from decimal import Decimal
-from workingdayapp.forms import WorkingDayForm
-from django.utils import timezone
+from .forms import NewDriverForm
+from .forms import Car_cost_form
 from .forms import PeriodForm, Gas_upload
-from django.db.models import Sum
-
-from django.contrib.auth.models import Group
-
-import django.core.exceptions
-
-import requests
-import json
-import xlrd
-
-import smtplib, ssl
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
-
-from decouple import config
-import time
-
+from .forms import Yandex_upload_form
+from .cron_park import upload_park_transactions, service_send_mail
 from .scripts import driver_mailing
-
+from workingdayapp.forms import WorkingDayForm
+from bsktaxi.settings import BASE_DIR
+log_file_path = os.path.join(BASE_DIR, 'log/log.txt')
 
 def culc_debt(drivers):
 	debt=0
 	for driver in drivers:
 		debt += driver.debt
 	return debt
-
 
 def taxi_show_index(request):
 
@@ -345,32 +335,51 @@ def taxi_show_cashbox(request):
 
 	users_in_group = Group.objects.get(name="taxiadmin").user_set.all()
 	users_in_group_collector = Group.objects.get(name="taxicollector").user_set.all()
-
 	collector = False
 
 	if request.user in users_in_group_collector:
 		collector = True
 
 	if request.user.is_authenticated and (request.user in users_in_group or request.user in users_in_group_collector):
-
-		cashbox = Cashbox.objects.all().order_by('-date')
-
+		if request.method == 'POST':
+			period_form = PeriodForm(request.POST)
+			if period_form.is_valid():
+				date_start = datetime.strptime((period_form.cleaned_data['trip_start'] + ' 00:00:01'), '%Y-%m-%d %H:%M:%S')
+				date_end = datetime.strptime((period_form.cleaned_data['trip_end'] + ' 23:59:59'), '%Y-%m-%d %H:%M:%S')
+			else:
+				messages.info(request, 'Не выбран период отчета!!')
+				current_path = request.META['HTTP_REFERER']
+				return redirect(current_path)	
+		else:
+			date_end = datetime.now()
+			if date_end.day > 2:
+				date_start = date_end.replace(day = int(date_end.day - 2))
+			else:	
+				date_start = date_end.replace(day = int(date_end.day + 30 - 2))
+				if date_end.month > 1:
+					date_start = date_start.replace(month = int(date_start.month - 1))
+				else:
+					date_start =date_start.replace(month = int(date_start.month + 12 - 1))
+					date_start = date_start.replace(year = int(date_start.year - 1))
+			date_end = date_end.replace(hour=23, minute=59, second=59)
+			date_start = date_start.replace(hour=0, minute=0, second=1)
+		if (date_end - date_start).days > 7:
+			messages.info(request, 'Выберите меньший период отчета!! (не больше 1 недели)')
+			current_path = request.META['HTTP_REFERER']
+			return redirect(current_path)
+		cashbox = Cashbox.objects.filter(date__lte=date_end.isoformat() + '+03:00', date__gte=date_start.isoformat() + '+03:00')
 		ca_cash 	 = Cashbox.objects.all().aggregate(Sum('cash'))['cash__sum']
 		ca_cash_card = Cashbox.objects.all().aggregate(Sum('cash_card'))['cash_card__sum']
-
 		context = {
-
 			'cashbox': cashbox,
-            'ca_cash': ca_cash.quantize(Decimal("1.00")) if ca_cash else 0,
-            'ca_cash_card': ca_cash_card.quantize(Decimal("1.00")) if ca_cash_card else 0,
+			'ca_cash': ca_cash.quantize(Decimal("1.00")),
+			'ca_cash_card': ca_cash_card.quantize(Decimal("1.00")),
 			'collector': collector,
-
+			'date_start': date_start.strftime("%Y-%m-%d"),
+			'date_end': date_end.strftime("%Y-%m-%d"),
 		}
-
 		return	render(request, 'taxiapp/cashbox.html', context)
-
 	else:
-
 		messages.info(request, 'У Вас не достаточно прав для доступа в данный раздел! Обратитесь к администратору!')
 		return render(request, 'authapp/login.html')
 
@@ -432,113 +441,74 @@ def taxi_show_history(request):
 	
 	users_in_group = Group.objects.get(name="taxiadmin").user_set.all()
 	users_in_group_collector = Group.objects.get(name="taxicollector").user_set.all()
-
 	if request.user.is_authenticated and (request.user in users_in_group or request.user in users_in_group_collector):
-
 		if request.method == 'POST':
-
 			period_form = PeriodForm(request.POST)
-
 			if period_form.is_valid():
-
-				trip_start 		= period_form.cleaned_data['trip_start'] + ' 00:00:01'
-				trip_end 		= period_form.cleaned_data['trip_end'] + ' 23:59:59'
-
-				date_lte 	= datetime.strptime(trip_start, '%Y-%m-%d %H:%M:%S')
-				date_now	= datetime.strptime(trip_end, '%Y-%m-%d %H:%M:%S')
-
+				date_start = datetime.strptime((period_form.cleaned_data['trip_start'] + ' 00:00:01'), '%Y-%m-%d %H:%M:%S')
+				date_end = datetime.strptime((period_form.cleaned_data['trip_end'] + ' 00:00:01'), '%Y-%m-%d %H:%M:%S')
 			else:
-
 				messages.info(request, 'Не выбран период отчета!!')
 				current_path = request.META['HTTP_REFERER']
 				return redirect(current_path)	
-
 		else:
-
-			date_now    =   timezone.now()
-
-			if date_now.day > 7:
-
-				date_lte 	= 	date_now.replace(day = int(date_now.day - 7))
-
+			date_end = datetime.now()
+			if date_end.day > 2:
+				date_start = date_end.replace(day = int(date_end.day - 2))
 			else:	
-
-				date_lte 	= 	date_now.replace(day = int(date_now.day + 30 - 7))
-
-				if date_now.month > 1:
-
-					date_lte 	= 	date_lte.replace(month = int(date_lte.month - 1))
-
+				date_start = date_end.replace(day = int(date_end.day + 30 - 2))
+				if date_end.month > 1:
+					date_start = date_start.replace(month = int(date_start.month - 1))
 				else:
-
-					date_lte 	= 	date_lte.replace(month = int(date_lte.month + 12 - 1))
-					date_lte 	= 	date_lte.replace(year = int(date_lte.year - 1))
-					
-
+					date_start =date_start.replace(month = int(date_start.month + 12 - 1))
+					date_start = date_start.replace(year = int(date_start.year - 1))	
+			date_start = date_start.replace(hour=0, minute=0, second=1)
+			date_end = date_end.replace(hour=23, minute=59, second=59)
+		if (date_end - date_start).days > 7:
+			messages.info(request, 'Выберите меньший период отчета!! (не больше 1 недели)')
+			current_path = request.META['HTTP_REFERER']
+			return redirect(current_path)
 		d_history = []
-
-		driver_history = Driver.history.filter(history_date__lte=date_now, history_date__gte=date_lte)
-
-		for dh in driver_history:
-
+		driver_history = Driver.history.filter(history_date__lte=date_end.isoformat() + '+03:00', history_date__gte=date_start.isoformat() + '+03:00')
+		for dh_item in driver_history:
 			try:
-
-				dr_prev = dh.get_previous_by_history_date(id=dh.id)
-
-				driver 			= False
-				if (dh.first_name != dr_prev.first_name):
-
-					driver 		= True
-
-				if (dh.second_name != dr_prev.second_name):
-
-					driver 		= True
-
-				if (dh.third_name != dr_prev.third_name):
-
-					driver 		= True	
-
-				driver_license 	= False if (dh.driver_license == dr_prev.driver_license) else True
-				rate 			= False if (dh.rate == dr_prev.rate) else True
-				fuel_card 		= False if (dh.fuel_card == dr_prev.fuel_card) else True
-				car 			= False if (dh.car == dr_prev.car) else True
-				fuel_card_2 	= False if (dh.fuel_card_2 == dr_prev.fuel_card_2) else True
-				email 			= False if (dh.email == dr_prev.email) else True
-
-			except dh.DoesNotExist:
-
-
-				driver 			= False
-				driver_license 	= False
-				rate			= False
-				fuel_card		= False
-				car 			= False
-				fuel_card_2		= False
-				email			= False
-
-			d_history.append([dh, driver, driver_license, rate, fuel_card, car, fuel_card_2, email])
+				dr_prev = dh_item.get_previous_by_history_date(id=dh_item.id)
+				driver = False
+				if (dh_item.first_name != dr_prev.first_name):
+					driver = True
+				if (dh_item.second_name != dr_prev.second_name):
+					driver = True
+				if (dh_item.third_name != dr_prev.third_name):
+					driver = True	
+				driver_license = False if (dh_item.driver_license == dr_prev.driver_license) else True
+				rate = False if (dh_item.rate == dr_prev.rate) else True
+				fuel_card = False if (dh_item.fuel_card == dr_prev.fuel_card) else True
+				car = False if (dh_item.car == dr_prev.car) else True
+				fuel_card_2 = False if (dh_item.fuel_card_2 == dr_prev.fuel_card_2) else True
+				email = False if (dh_item.email == dr_prev.email) else True
+			except dh_item.DoesNotExist:
+				driver = False
+				driver_license = False
+				rate = False
+				fuel_card = False
+				car = False
+				fuel_card_2 = False
+				email = False
+			d_history.append([dh_item, driver, driver_license, rate, fuel_card, car, fuel_card_2, email])
 
 		work_day_hist  = []
-
-		wd_history     = Working_day.history.filter(history_date__lte=date_now, history_date__gte=date_lte)
-
-		for wd in wd_history:
-
+		wd_history     = Working_day.history.filter(history_date__lte=date_end.isoformat() + '+03:00', history_date__gte=date_start.isoformat() + '+03:00')
+		for wd_item in wd_history:
 			try:
-
-				wd_prev 		= wd.get_previous_by_history_date(id=wd.id)
-
-				rate 			= False if (wd.rate == wd_prev.rate) else True
-				fuel 			= False if (wd.fuel == wd_prev.fuel) else True
-				penalties 		= False if (wd.penalties == wd_prev.penalties) else True
-				cash 			= False if (wd.cash == wd_prev.cash) else True
-				cash_card 		= False if (wd.cash_card == wd_prev.cash_card) else True
-				cashless 		= False if (wd.cashless == wd_prev.cashless) else True
-				debt_of_day 	= False if (wd.debt_of_day == wd_prev.debt_of_day) else True
-
-
-			except wd.DoesNotExist:
-
+				wd_prev 		= wd_item.get_previous_by_history_date(id=wd_item.id)
+				rate 			= False if (wd_item.rate == wd_prev.rate) else True
+				fuel 			= False if (wd_item.fuel == wd_prev.fuel) else True
+				penalties 		= False if (wd_item.penalties == wd_prev.penalties) else True
+				cash 			= False if (wd_item.cash == wd_prev.cash) else True
+				cash_card 		= False if (wd_item.cash_card == wd_prev.cash_card) else True
+				cashless 		= False if (wd_item.cashless == wd_prev.cashless) else True
+				debt_of_day 	= False if (wd_item.debt_of_day == wd_prev.debt_of_day) else True
+			except wd_item.DoesNotExist:
 				rate 			= False
 				fuel 			= False
 				penalties 		= False
@@ -546,22 +516,16 @@ def taxi_show_history(request):
 				cash_card 		= False
 				cashless		= False
 				debt_of_day 	= False
-
-			work_day_hist.append([wd, rate, fuel, penalties, cash, cash_card, cashless, debt_of_day])	
-
+			work_day_hist.append([wd_item, rate, fuel, penalties, cash, cash_card, cashless, debt_of_day])	
 
 		context = {
-
 			'd_history': d_history,
 			'work_day_hist': work_day_hist,
-			'date_now': date_now.strftime("%Y-%m-%d"),
-			'date_lte': date_lte.strftime("%Y-%m-%d"),
+			'date_start': date_start.strftime("%Y-%m-%d"),
+			'date_end': date_end.strftime("%Y-%m-%d"),
 		}
-
 		return	render(request, 'taxiapp/history.html', context)
-
 	else:
-
 		messages.info(request, 'У Вас не достаточно прав для доступа в данный раздел! Обратитесь к администратору!')
 		return render(request, 'authapp/login.html')
 
@@ -1223,275 +1187,259 @@ def get_total_cost_items(in_queryset):
 def taxi_admin_service_menu(request):
 	
 	if request.user.is_superuser:
-
-		context = {
-
-		}
-
-		return render(request, 'taxiapp/admin_services/menu.html', context)
+		return render(request, 'taxiapp/admin_services/menu.html')
 	else:
 		messages.info(request, 'У Вас не достаточно прав для доступа в данный раздел! Обратитесь к администратору!')
 		return render(request, 'authapp/login.html')
 
 def service_upload_working_day(request, input_date):
-
 	if request.user.is_superuser:
-
 		drivers = Driver.objects.filter(active=True)
 		current_date = datetime.strptime(input_date, "%Y-%m-%d")
 		today = datetime.weekday(current_date)
-
 		for driver in drivers:
-
 			try:
-
 				wd = Working_day.objects.get(driver=driver, date=current_date)
-
 			except:
-
 				if today == 0:
 					if driver.monday == True:
 						dr_rate = driver.rate
 					else:
 						dr_rate = 0
-
 				elif today == 1:
 					if driver.tuesday == True:
 						dr_rate = driver.rate
 					else:
 						dr_rate = 0
-
 				elif today == 2:
 					if driver.wednesday == True:
 						dr_rate = driver.rate
 					else:
 						dr_rate = 0
-
 				elif today == 3:
 					if driver.thursday == True:
 						dr_rate = driver.rate
 					else:
 						dr_rate = 0
-
 				elif today == 4:
 					if driver.friday == True:
 						dr_rate = driver.rate
 					else:
 						dr_rate = 0
-
 				elif today == 5:
 					if driver.saturday == True:
 						dr_rate = driver.rate
 					else:
 						dr_rate = 0
-
 				elif today == 6:
 					if driver.sunday == True:
 						dr_rate = driver.rate
 					else:
 						dr_rate = 0
-
 				else:
 					dr_rate = 0
-
 				new_working_day = Working_day(driver=driver,date=current_date,rate=dr_rate,fuel=0,penalties=0,cash=0,cash_card=0,cashless=0,)
 				new_working_day.save()
-
 		return HttpResponse('200')		
-
 	return HttpResponse('500')
 
-def service_upload_yandex(request, input_date):
+# def get_driver_profiles(offset):
+# 	drivers_list_url = 'https://fleet-api.taxi.yandex.net/v1/parks/driver-profiles/list'
+# 	dr_headers = {'Accept-Language': 'ru',
+#                'X-Client-ID': config('YA_X_CLIENT_ID'),
+#                'X-API-Key': config('YA_X_API_KEY')}
+# 	driver_data = {
+#                 "fields": {
+#                     "account": [],
+#                     "car": [],
+#                     "park": []
+#                 },
+#                 "query": {
+#                       "park": {
+# 						# "driver_profile": {
+# 						# 	"work_status": [
+# 						# 		"working"
+# 						# 	]
+# 						# },
+#                         "id": config('YA_ID')
+#                       },
+#                 },
+#                 "offset": offset,
+#     }
+# 	for i in range(10):
+# 		time.sleep(2)
+# 		answer = requests.post(drivers_list_url, headers=dr_headers, data=json.dumps(driver_data))
+# 		try:
+# 			try:
+# 				with open(log_file_path, 'a+') as file:
+# 					file.write(datetime.now().strftime("%Y-%m-%d %H:%M:%S") + ' ' + drivers_list_url + ' ' + str(answer.status_code) + '\n')
+# 			except:
+# 				pass		
+# 		except:
+# 			pass		
+# 		if answer.status_code == 200:
+# 			break
+# 	if answer:
+# 		response = answer.json()
+# 		return response.get('driver_profiles')
+# 	else:
+# 		return []	
 
+# def get_drivers_transaction(driver_id, fromTime, toTime):
+# 	url = 'https://fleet-api.taxi.yandex.net/v2/parks/driver-profiles/transactions/list'
+# 	headers = {'Accept-Language': 'ru',
+# 			'X-Client-ID': config('YA_X_CLIENT_ID'),
+# 			'X-API-Key': config('YA_X_API_KEY')}
+# 	data = {
+# 		"query": {
+# 			"park": {
+# 				"driver_profile": {
+# 				"id": driver_id
+# 				},
+# 			"id": config('YA_ID'),
+# 			"transaction": {
+# 				"category_ids": ['partner_service_manual',],
+# 				"event_at": {
+# 				"from": fromTime,
+# 				"to": toTime
+# 				}
+# 			}
+# 			}
+# 		}
+# 	}
+# 	answer = None
+# 	for i in range(20):
+# 		time.sleep(1)
+# 		try:
+# 			answer = requests.post(url, headers=headers, data=json.dumps(data),)
+# 			try:
+# 				with open(log_file_path, 'a+') as file:
+# 					file.write(datetime.now().strftime("%Y-%m-%d %H:%M:%S") + ' ' + url + ' ' + str(answer.status_code) + '\n')
+# 			except:
+# 				pass		
+# 		except:
+# 			continue
+# 		if answer.status_code == 200:
+# 			break
+# 		time.sleep(i*3)
+# 	if answer:
+# 		return answer.json().get('transactions')
+# 	else:
+# 		return []
+
+# def get_drivers_working_day(db_driver, current_date):
+# 	working_day = Working_day.objects.filter(driver=db_driver, date=current_date).first()
+# 	if not working_day:
+# 		working_day = Working_day.objects.filter(driver=db_driver).last()
+# 	if working_day:
+# 		return working_day
+# 	else:
+# 		return None	
+
+# def upload_transactions(current_date, fromTime, toTime):
+# 	upload_transactions_data = {}
+# 	profiles = []
+# 	offset = 0
+# 	for i in range(1000):
+# 		part_of_profiles = get_driver_profiles(offset)
+# 		if len(part_of_profiles) > 0:
+# 			profiles += part_of_profiles
+# 			offset += 1000
+# 		else:
+# 			break
+# 	# profiles = profiles[:10]
+# 	missing_drivers = []
+# 	summ_of_transactions = 0
+# 	qty_of_transactions = 0
+# 	for p in profiles:
+# 		driver = (p.get('driver_profile'))
+# 		driver_license = driver.get('driver_license').get('number')
+# 		drivers_transaction = get_drivers_transaction(driver.get('id'), fromTime, toTime)
+# 		if drivers_transaction:
+# 			for item in drivers_transaction:
+# 				db_driver = Driver.objects.filter(driver_license=driver_license).first()
+# 				if db_driver:
+# 					working_day = get_drivers_working_day(db_driver, current_date)
+# 					if working_day:
+# 						working_day.cashless = working_day.cashless + Decimal(abs(float(item['amount'])))
+# 						working_day.save()
+# 					else:
+# 						missing_drivers.append([
+# 							driver_license,
+# 							driver.get('last_name'),
+# 							driver.get('first_name'),
+# 							driver.get('middle_name'),
+# 							item['amount'],
+# 							True
+# 						])
+# 				else:
+# 					missing_drivers.append([
+# 						driver_license,
+# 						driver.get('last_name'),
+# 						driver.get('first_name'),
+# 						driver.get('middle_name'),
+# 						item['amount'],
+# 						False
+# 					])	
+# 				summ_of_transactions += Decimal(abs(float(item['amount'])))
+# 				qty_of_transactions += 1
+# 	upload_transactions_data.update({
+# 		"missing_drivers": missing_drivers,
+# 		"summ_of_transactions": summ_of_transactions,
+# 		"qty_of_transactions": qty_of_transactions
+# 	})
+# 	return upload_transactions_data
+
+def service_upload_yandex(request):
 	if request.user.is_superuser:
-		
-		driver_url = 'https://fleet-api.taxi.yandex.net/v1/parks/driver-profiles/list'
-		dr_headers = {'Accept-Language': 'ru',
-				'X-Client-ID': config('YA_X_CLIENT_ID'),
-				'X-API-Key': config('YA_X_API_KEY')}
-
-		driver_data = {
-					"fields": {
-
-						"account": [],
-						"car": [],
-						"park": []
-					},
-					"query": {
-						"park": {
-							"id": config('YA_ID')
-						},
-					},
-
-		}
-
-		for i in range(10):
-			time.sleep(2)
-			answer = requests.post(driver_url, headers=dr_headers, data=json.dumps(driver_data),)
-			if answer.status_code == 200:
-				break
-
-		response = answer.json()
-		profiles = response.get('driver_profiles')	
-		missing_drivers = []
-		current_date = datetime.strptime(input_date, "%Y-%m-%d")
-
-		summ_of_transactions = 0
-		num_of_transactions = 0
-
-		for p in profiles:
-			
-			driver = (p.get('driver_profile'))
-			dr_license = driver.get('driver_license')
-
-			n = current_date
-			n = n.replace(hour=0, minute=1)
-			y = n + timedelta(days=1)
-			y = y.replace(hour=0,minute=1)
-
-			fromTime         =   n.isoformat() + '+00:00'
-			toTime   =   y.isoformat() + '+00:00'
-
-			url = 'https://fleet-api.taxi.yandex.net/v2/parks/driver-profiles/transactions/list'
-			headers = {'Accept-Language': 'ru',
-					'X-Client-ID': config('YA_X_CLIENT_ID'),
-					'X-API-Key': config('YA_X_API_KEY')}
-
-			data = {
-						"query": {
-								"park": {
-										"driver_profile": {
-										"id": driver['id']
-										},
-									"id": config('YA_ID'),
-									"transaction": {
-											"category_ids": ['partner_service_manual',],
-											"event_at": {
-											"from": fromTime,
-											"to": toTime
-											}
-									}
-								}
-						}
-
-			}
-
-			for i in range(20):
-
-				answer = requests.post(url, headers=headers, data=json.dumps(data),)
-				if answer.status_code == 200:
-					time.sleep(3)
-					break
-
-				time.sleep(i*3)
-
-			response = answer.json()
-			transactions = response.get('transactions')
-			
-			if transactions:
-
-				for key in transactions:
-					taxidriver = Driver.objects.filter(driver_license=dr_license['number']).first()
-					if taxidriver:
-						working_day = Working_day.objects.filter(driver=taxidriver, date=current_date).first()
-						if working_day:
-							working_day.cashless = working_day.cashless + Decimal(abs(float(key['amount'])))
-							working_day.save()
+		if request.method == 'POST':
+			yandex_upload_form = Yandex_upload_form(request.POST)
+			if yandex_upload_form.is_valid():
+				current_date = yandex_upload_form.cleaned_data['date']
+				yandex_current_date = datetime(current_date.year, current_date.month, current_date.day, hour=0, minute=0)
+				fromTime = yandex_current_date.replace(hour=0, minute=0, second=1).isoformat() + '+03:00'
+				toTime = yandex_current_date.replace(hour=23, minute=59, second=59).isoformat() + '+03:00'
+				if current_date:
+					# upload_transactions_data = upload_transactions(current_date, fromTime, toTime)
+					upload_transactions_data = upload_park_transactions(current_date, fromTime, toTime)
+					qty_of_transactions = upload_transactions_data.get("qty_of_transactions")
+					summ_of_transactions = upload_transactions_data.get("summ_of_transactions")
+					missing_drivers = upload_transactions_data.get("missing_drivers")
+					if qty_of_transactions:
+						letter_sended = service_send_mail(missing_drivers, current_date, summ_of_transactions, qty_of_transactions)
+						if letter_sended:
+							return JsonResponse(
+								data={
+									'success': 'Загрузка данных от {} завершена! Письмо с отчетом отправлено.'.format(current_date.strftime("%d-%m-%Y")),
+									'message': 'Загружено {} транзакций. На сумму {} р.'.format(qty_of_transactions, summ_of_transactions.quantize(Decimal("1.00"))),
+								},
+								status=200
+        					)
 						else:
-							working_day = Working_day.objects.filter(driver=taxidriver).last()
-							if working_day:
-								working_day.cashless = working_day.cashless + Decimal(abs(float(key['amount'])))
-								working_day.save()
-							else:
-								missing_drivers.append([dr_license['number'], driver.get('last_name'), driver.get('first_name'), driver.get('middle_name'), key['amount'], True,])
-								continue	
-
-						summ_of_transactions    += Decimal(abs(float(key['amount'])))
-						num_of_transactions     += 1
-
+							return JsonResponse(
+								data={
+									'success': 'Загрузка данных от {} завершена! Письмо с отчетом отправить не удалось.'.format(current_date.strftime("%d-%m-%Y")),
+									'message': 'Загружено {} транзакций. На сумму {} р.'.format(qty_of_transactions, summ_of_transactions.quantize(Decimal("1.00"))),
+								},
+								status=200
+        					)
 					else:
-						missing_drivers.append([dr_license['number'], driver.get('last_name'), driver.get('first_name'), driver.get('middle_name'), key['amount'], False,])
-
-		if num_of_transactions:
-
-			service_send_mail(missing_drivers, current_date, summ_of_transactions, num_of_transactions)
-
-
-		return HttpResponse('200')
-	
-	return HttpResponse('500')
-
-
-def service_send_mail(missing_drivers, day_before_today, summ_of_transactions, num_of_transactions):
-
-
-    HOST = "mail.hosting.reg.ru"
-    sender_email = config('MAIL_USER')
-    receiver_email = ['info@annasoft.ru', 'cherbadgi_sn@mail.ru', 'kzamesova@mail.ru', ]
-    password = config('MAIL_PASSWORD')
-
-     
-    message = MIMEMultipart("alternative")
-    message["Subject"] = "Отчет по загрузке из Яндекс от {}".format(day_before_today.strftime("%Y-%m-%d"))
-    message["From"] = sender_email
-    message["To"] = ','.join(receiver_email)
-    
-    test_text = ""
-    if missing_drivers:
-        for item in missing_drivers:
-            no_working_days = 'Нет'
-            if item[5]:
-               no_working_days = 'Да'
-            test_text += "<p>{} {} {} {}, сумма : {}, нет рабочих дней: {}</p>".format(item[0], item[1], item[2], item[3], item[4], no_working_days)
-
-        text = """\
-        {}""".format(test_text)
-         
-        html = """\
-        <html>
-          <body>
-            <H3>{1} загружено {3} транзакций на сумму {2}р. </H3>
-
-            <H3>Список водителей, которые не найдены в базе данных: </H3>
-               {0}
-            <p>Данные по транзакциям этих водителей за {1} необходимо загрузить вручную!</p>
-          </body>
-        </html>
-        """.format(test_text, day_before_today.strftime("%Y-%m-%d"), summ_of_transactions.quantize(Decimal("1.00")), num_of_transactions)
-
-    else:
-
-        text = """\
-        """
-        
-        html = """\
-        <html>
-          <body>
-            <H3>{0} загружено {2} транзакций на сумму {1}р. </H3>
-          </body>
-        </html>
-        """.format(day_before_today.strftime("%Y-%m-%d"), summ_of_transactions.quantize(Decimal("1.00")), num_of_transactions)
-     
-    part1 = MIMEText(text, "plain")
-    part2 = MIMEText(html, "html")
-     
-    message.attach(part1)
-    message.attach(part2)
-    
-    context = ssl.create_default_context()
-
-    try:
-        server = smtplib.SMTP(HOST, 587)
-        server.starttls()
-        server.login(sender_email, password)
-        server.sendmail(sender_email, receiver_email , message.as_string())
-        server.quit()
-
-        log_file = open(os.path.abspath(config('LOG_FILE_PATH')), 'a+')
-        log_file.write(datetime.now().strftime("%Y-%m-%d %H:%M:%S") + ' загружено транзакций ' + str(num_of_transactions)  + ' на сумму ' + str(summ_of_transactions.quantize(Decimal("1.00"))) + ', письмо отправлено!'   + '\n')
-        log_file.close()
-
-    except Exception as e: 
-        log_file = open(os.path.abspath(config('LOG_FILE_PATH')), 'a+')
-        log_file.write(datetime.now().strftime("%Y-%m-%d %H:%M:%S") + ' загружено транзакций ' + str(num_of_transactions)  + ' на сумму ' + str(summ_of_transactions.quantize(Decimal("1.00"))) + ' письмо отправить не удалось. Код ошибки: ' + str(e) + '\n')
-        log_file.close()
+						return JsonResponse(
+							data={
+								'success': 'За указанную дату {} списаний не производилось.'.format(current_date.strftime("%d-%m-%Y")),
+							},
+							status=200
+						)			
+			else:
+				return JsonResponse(
+					data={
+						'error': 'Ошибка при загрузке. Введите корректную дату.',
+					},
+					status=404
+				)
+	return JsonResponse(
+		data={
+			'error': 'Ошибка при загрузке. Обратитесь к администратору!',
+		},
+		status=400
+	)

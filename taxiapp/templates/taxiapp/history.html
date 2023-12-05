@@ -13,8 +13,8 @@
       <div class="col-lg-12 col-12">
         <form id="edit_period" method="POST" action="{% url 'taxi_show_history' %}">
           {% csrf_token %}
-          <input class="date-as" type="date" id="start" name="trip_start" value="{{ date_lte }}" min="2018-01-01" required="">
-          <input class="date-as" type="date" id="end" name="trip_end" value="{{ date_now }}" min="2018-01-01" required="">
+          <input class="date-as" type="date" id="start" name="trip_start" value="{{ date_start }}" min="2018-01-01" required="">
+          <input class="date-as" type="date" id="end" name="trip_end" value="{{ date_end }}" min="2018-01-01" required="">
           <button class="theme_button color1" type="submit" form="edit_period"><i class="rt-icon2-magnifier"></i></button>
           {% for message in messages %}
           <p  style="color: red" class="text-uppercase" >* {{ message }} </p>
@@ -39,19 +39,19 @@
         <div class="tab-content top-color-border">
 
           <div class="tab-pane fade in active" id="tab3">
-            <table class="table_template darklinks table-hover">
+            <table class="table_template darklinks table-hover table_sticky">
               <thead class="thead-dark">
                 <tr>
-                  <th>Дата изменения</th>
-                  <th>Изменено</th>
-                  <th></th>
-                  <th>Водитель</th>
-                  <th>Номер В/У</th>
-                  <th>Номер(NEW)</th>
-                  <th>Топливная карта</th>
-                  <th>Топливная карта 2</th>
-                  <th>Email</th>
-                  <th>Ставка</th>
+                  <th class="table_cell">Дата изменения</th>
+                  <th class="table_cell">Изменено</th>
+                  <th class="table_cell"></th>
+                  <th class="table_cell">Водитель</th>
+                  <th class="table_cell">Номер В/У</th>
+                  <th class="table_cell">Номер(NEW)</th>
+                  <th class="table_cell">Топливная карта</th>
+                  <th class="table_cell">Топливная карта 2</th>
+                  <th class="table_cell">Email</th>
+                  <th class="table_cell">Ставка</th>
                 </tr>
               </thead>
               <tbody>
@@ -73,21 +73,21 @@
             </table>
           </div>
           <div class="tab-pane fade" id="tab4">
-            <table class="table_template darklinks table-hover">
+            <table class="table_template darklinks table-hover table_sticky">
               <thead class="thead-dark">
                 <tr>
-                  <th>Дата изменения</th>
-                  <th>Изменено</th>
-                  <th></th>
-                  <th>Дата</th>
-                  <th>Водитель</th>
-                  <th>Ставка</th>
-                  <th>ГСМ</th>
-                  <th>Штрафы</th>
-                  <th>Наличные</th>
-                  <th>Карта</th>
-                  <th>Безналичные</th>
-                  <th>Долг</th>
+                  <th class="table_cell">Дата изменения</th>
+                  <th class="table_cell">Изменено</th>
+                  <th class="table_cell"></th>
+                  <th class="table_cell">Дата</th>
+                  <th class="table_cell">Водитель</th>
+                  <th class="table_cell">Ставка</th>
+                  <th class="table_cell">ГСМ</th>
+                  <th class="table_cell">Штрафы</th>
+                  <th class="table_cell">Наличные</th>
+                  <th class="table_cell">Карта</th>
+                  <th class="table_cell">Безналичные</th>
+                  <th class="table_cell">Долг</th>
                 </tr>
               </thead>
               <tbody>

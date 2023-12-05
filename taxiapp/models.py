@@ -52,23 +52,16 @@ class Driver(models.Model):
 	first_name		= models.CharField(max_length = 30, verbose_name = 'Имя')
 	second_name		= models.CharField(max_length = 30, verbose_name = 'Фамилия')
 	third_name		= models.CharField(max_length = 30, verbose_name = 'Отчество', blank=True, null=True)
-
 	driver_license	= models.CharField(max_length = 15, verbose_name = 'Номер В/У', blank=True, null=True, default='')
 	car_number		= models.CharField(max_length = 15, verbose_name = 'Номер А/М', blank=True, null=True, default='')
 	car_model		= models.CharField(max_length = 30, verbose_name = 'Марка А/М', blank=True, null=True, default='')
 	fuel_card		= models.CharField(max_length = 30, verbose_name = 'Топливная карта', blank=True, null=True, default='')
 	fuel_card_2		= models.CharField(max_length = 30, verbose_name = 'Топливная карта 2', blank=True, null=True, default='')
-
 	email 			= models.CharField(max_length = 30, verbose_name='Email', blank=True)
-
 	rate			= models.DecimalField(verbose_name = 'Ставка', max_digits=15, decimal_places=2, blank=True, null=True, default=0)
-
 	active			= models.BooleanField(verbose_name='Активный', default=True)
-
 	slug 			= models.SlugField(max_length=10, verbose_name='Url', blank=True, db_index=True)
-	
 	debt			= models.DecimalField(verbose_name = 'Долг', max_digits=15, decimal_places=2)
-
 	monday			= models.BooleanField(verbose_name='Понедельник', default=True)
 	tuesday			= models.BooleanField(verbose_name='Вторник', default=True)
 	wednesday		= models.BooleanField(verbose_name='Среда', default=True)
@@ -76,6 +69,7 @@ class Driver(models.Model):
 	friday			= models.BooleanField(verbose_name='Пятница', default=True)
 	saturday		= models.BooleanField(verbose_name='Суббота', default=True)
 	sunday			= models.BooleanField(verbose_name='Воскресенье', default=True)
+	driver_profile_id = models.CharField(max_length = 100, verbose_name='Идентификатор водителя Яндекс', blank=True)
 	car 			= models.ForeignKey('Car', verbose_name='Автомобиль', on_delete=models.SET_DEFAULT,null=True, blank=True, default=None)
 
 	history = HistoricalRecords()

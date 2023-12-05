@@ -8,3 +8,5 @@ log
 .env
 venv
 /static/
+.voronezh_env
+.belgorod_env

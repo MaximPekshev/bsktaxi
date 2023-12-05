@@ -46,4 +46,6 @@ class Car_cost_form(forms.Form):
 	comment		= forms.CharField(max_length = 200, required=False)
 	parent_cost_item	= forms.CharField(max_length = 50, required=False)
 	is_category = forms.BooleanField(required=False)
-    
+
+class Yandex_upload_form(forms.Form):
+	date = forms.DateField()

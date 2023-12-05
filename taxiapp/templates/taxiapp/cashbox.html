@@ -12,19 +12,30 @@
 				<a href="" class="theme_button" data-toggle="modal" data-target="#incass">ИНКАССАЦИЯ</a>
 				{% endif %}
 			</div>
+			<div class="col-lg-12 col-12">
+				<form id="edit_period" method="POST" action="{% url 'taxi_show_cashbox' %}">
+				  {% csrf_token %}
+				  <input class="date-as" type="date" id="start" name="trip_start" value="{{ date_start }}" min="2018-01-01" required="">
+				  <input class="date-as" type="date" id="end" name="trip_end" value="{{ date_end }}" min="2018-01-01" required="">
+				  <button class="theme_button color1" type="submit" form="edit_period"><i class="rt-icon2-magnifier"></i></button>
+				  {% for message in messages %}
+				  <p  style="color: red" class="text-uppercase" >* {{ message }} </p>
+				  {% endfor %}
+				</form>
+			  </div>
 		</div>
 	</div>
 	<div class="container col-lg-12">
 		<div class="row">
 			<div class="col-sm-12">
-				<table class="table_template darklinks table-hover">
+				<table class="table_template darklinks table-hover table_sticky">
 					<thead class="thead-dark">
 						<tr>
-							<th width="20%">Дата</th>
-							<th width="20%">Рабочий день</th>
-							<th width="40%">ФИО</th>
-							<th style="text-align: right">Наличные : {{ ca_cash }}</th>
-							<th style="text-align: right">Карта : {{ ca_cash_card }}</th>
+							<th width="20%" class="table_cell">Дата</th>
+							<th width="20%" class="table_cell">Рабочий день</th>
+							<th width="40%" class="table_cell">ФИО</th>
+							<th style="text-align: right" class="table_cell">Наличные : {{ ca_cash }}</th>
+							<th style="text-align: right" class="table_cell">Карта : {{ ca_cash_card }}</th>
 						</tr>
 					</thead>
 					<tbody>

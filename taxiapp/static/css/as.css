@@ -1,0 +1,10 @@
+.table_sticky {
+    position: relative;
+    z-index: 1;
+  }
+  
+.table_cell { /* header cell */
+    position: sticky;
+    top: 0;
+    background-color: #fcca03;
+}

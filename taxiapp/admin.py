@@ -26,9 +26,7 @@ class DriverAdmin(SimpleHistoryAdmin, admin.ModelAdmin):
 	inlines		= [Working_dayInline]
 
 	exclude = ('slug',)
-
-
-
+	readonly_fields = ('driver_profile_id', )
 
 admin.site.register(Driver, DriverAdmin)
 
