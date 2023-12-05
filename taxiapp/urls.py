@@ -39,7 +39,7 @@ urlpatterns = [
 	path('cost-report/', 			taxi_show_cost_report, name='taxi_show_cost_report'),
 	#admin services
 	path('services/upload-working-day/<str:input_date>/', 	service_upload_working_day , name='service_upload_working_day'),
-	path('services/upload-yandex/<str:input_date>/', 	service_upload_yandex , name='service_upload_yandex'),
+	path('services/upload-yandex/', 	service_upload_yandex , name='service_upload_yandex'),
 	path('services/', 				taxi_admin_service_menu, name='taxi_admin_service_menu'),
 
 			]

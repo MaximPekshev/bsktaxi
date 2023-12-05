@@ -74,8 +74,11 @@
 {% endblock %}
 
 {% block custom_scripts %}
-<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+<script src="https://unpkg.com/axios@1.0.0/dist/axios.min.js"></script>
+
 <script type="text/javascript">
+    axios.defaults.xsrfCookieName = 'csrftoken'
+    axios.defaults.xsrfHeaderName = "X-CSRFTOKEN"
     window.onload = function() {
         document.getElementById('wd_upload_button').addEventListener('click', upload_working_days, false);
         document.getElementById('ya_upload_button').addEventListener('click', upload_yandex, false);
@@ -125,40 +128,47 @@
     const upload_yandex = async (event) => {
         event.preventDefault();
         let YADateInput = document.getElementById('YADateInput');
+        let yandexErrorPlace = document.getElementById('yandexErrorPlace');
+        yandexErrorPlace.innerHTML = "";
         if (YADateInput != null && YADateInput.value !="") {
             document.getElementById('yandexErrorPlace').innerHTML ='';
-
             let preloaderEl = document.getElementById('preloader');
             let serviceFormEl = document.getElementById('service_form');
-
             preloaderEl.classList.add('visible');
             preloaderEl.classList.remove('hidden');
-
             serviceFormEl.classList.add('hidden');
             serviceFormEl.classList.remove('visible');
+            let data = {
+                "date" : YADateInput.value,
+            };
+            await axios({
+                method: 'post',
+                mode: 'same-origin',
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
+                url: '/services/upload-yandex/',
+                data: data,
+            }).then((response) => {
+                preloaderEl.classList.remove('visible');
+                preloaderEl.classList.add('hidden');
+                serviceFormEl.classList.add('visible');
+                serviceFormEl.classList.remove('hidden');
+                yandexErrorPlace.innerHTML =`<p style="color:blue; text-align: center;">${response.data.success}</p>`;
+                if (response.data.message != "") {
+                    yandexErrorPlace.innerHTML += `<p style="color:blue; text-align: center;>${response.data.message}</p>`;
+                };
+            }).catch((error) => {
+                preloaderEl.classList.remove('visible');
+                preloaderEl.classList.add('hidden');
+                serviceFormEl.classList.add('visible');
+                serviceFormEl.classList.remove('hidden');
+                yandexErrorPlace.innerHTML =`<p style="color:black; text-align: center;">${error.data.error}</p>`;
+                console.log(error)
+            })
 
-            let response = await axios.get(`/services/upload-yandex/${YADateInput.value}/`)
-                .then(() => {
-                    let preloaderEl = document.getElementById('preloader');
-
-                    preloaderEl.classList.remove('visible');
-                    preloaderEl.classList.add('hidden');
-
-                    serviceFormEl.classList.add('visible');
-                    serviceFormEl.classList.remove('hidden');
-
-                    document.getElementById('yandexErrorPlace').innerHTML =`<p style="color:blue; text-align: center;">Данные за ${YADateInput.value} успешно загружены!</p>`;
-                }).catch((error) => {
-                    preloaderEl.classList.remove('visible');
-                    preloaderEl.classList.add('hidden');
-
-                    serviceFormEl.classList.add('visible');
-                    serviceFormEl.classList.remove('hidden');
-                    document.getElementById('yandexErrorPlace').innerHTML ='<p style="color:black; text-align: center;">Произошла ошибка на сервере!!</p>';
-                    console.log(error)
-                })
         } else {
-            document.getElementById('yandexErrorPlace').innerHTML ='<p style="color:black; text-align: center;">Выберите дату!!</p>';
+            yandexErrorPlace.innerHTML ='<p style="color:black; text-align: center;">Выберите дату!!</p>';
         }
     }
 </script>    

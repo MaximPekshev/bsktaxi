@@ -22,7 +22,7 @@ from .forms import NewDriverForm
 from .forms import Car_cost_form
 from .forms import PeriodForm, Gas_upload
 from .forms import Yandex_upload_form
-from .cron_park import upload_park_transactions, service_send_mail
+from .cron import upload_park_transactions, service_send_mail
 from .scripts import driver_mailing
 from workingdayapp.forms import WorkingDayForm
 from bsktaxi.settings import BASE_DIR
