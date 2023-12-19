@@ -8,8 +8,7 @@ SECRET_KEY = config('SECRET_KEY')
 
 DEBUG = config('DEBUG', cast=bool)
 
-# ALLOWED_HOSTS = ['belgorod.bsktaxi.ru', 'www.belgorod.bsktaxi.ru', 'localhost', ]
-# ALLOWED_HOSTS = ['voronezh.bsktaxi.ru', 'www.voronezh.bsktaxi.ru', 'localhost', ]
+ALLOWED_HOSTS = ['belgorod.bsktaxi.ru', 'www.belgorod.bsktaxi.ru', 'localhost', 'voronezh.bsktaxi.ru', 'www.voronezh.bsktaxi.ru',]
 
 # Application definition
 
