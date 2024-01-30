@@ -10,3 +10,5 @@ venv
 /static/
 .voronezh_env
 .belgorod_env
+.voronezh2_env
+passenger_wsgi.py
