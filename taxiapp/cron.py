@@ -241,8 +241,7 @@ def service_send_mail(missing_drivers, current_date, summ_of_transactions, qty_o
 	current_date = current_date.strftime("%d-%m-%Y")
 	HOST = "mail.hosting.reg.ru"
 	sender_email = config('MAIL_USER')
-	# receiver_email = ['info@annasoft.ru', 'cherbadgi_sn@mail.ru', 'kzamesova@mail.ru', ]
-	receiver_email = ['m.pekshev@annasoft.ru', ]
+	receiver_email = ['cherbadgi_sn@mail.ru', 'kzamesova@mail.ru', ]
 	password = config('MAIL_PASSWORD')
 	message = MIMEMultipart("alternative")
 	message["Subject"] = "Отчет по загрузке из Яндекс от {}".format(current_date)

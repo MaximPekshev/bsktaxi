@@ -11,4 +11,5 @@ venv
 .voronezh_env
 .belgorod_env
 .voronezh2_env
+.orenburg_env
 passenger_wsgi.py
