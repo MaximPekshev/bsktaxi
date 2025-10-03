@@ -9,13 +9,18 @@ SECRET_KEY = config('SECRET_KEY')
 DEBUG = config('DEBUG', cast=bool)
 
 ALLOWED_HOSTS = [
+    'localhost', 
+    '127.0.0.1',
     'belgorod.bsktaxi.ru',
     'www.belgorod.bsktaxi.ru',
-    'localhost', 
     'voronezh.bsktaxi.ru', 
     'www.voronezh.bsktaxi.ru',
     'voronezh2.bsktaxi.ru', 
     'www.voronezh2.bsktaxi.ru',
+    'orenburg.bsktaxi.ru', 
+    'www.orenburg.bsktaxi.ru',
+    'saratov.bsktaxi.ru', 
+    'www.saratov.bsktaxi.ru',
 ]
 
 # Application definition
@@ -114,5 +119,4 @@ CRONTAB_DJANGO_PROJECT_NAME = config('CRONTAB_DJANGO_PROJECT_NAME')
 CRONJOBS = [
     ('30 0 * * *', 'taxiapp.cron.creating_working_days'),
     ('55 2 * * *', 'taxiapp.cron.transactions_yandex'),
-    # ('55 3 * * *', 'taxiapp.cron.yandex_transactions'),
 ]
