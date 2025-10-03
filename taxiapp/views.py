@@ -150,16 +150,10 @@ def driver_add_new(request):
 				else:
 					driver_license = ''
 
-				if dr_form.cleaned_data['fuel_card']:
-					fuel_card = dr_form.cleaned_data['fuel_card']
+				if dr_form.cleaned_data['phone']:
+					phone = dr_form.cleaned_data['phone']
 				else:
-					fuel_card = ''
-
-
-				if dr_form.cleaned_data['fuel_card_2']:
-					fuel_card_2 = dr_form.cleaned_data['fuel_card_2']
-				else:
-					fuel_card_2 = ''
+					phone = ''
 
 				if dr_form.cleaned_data['email']:
 					email = dr_form.cleaned_data['email']
@@ -180,8 +174,7 @@ def driver_add_new(request):
 					first_name=first_name, second_name=last_name, 
 					third_name=third_name,
 					driver_license=driver_license,
-					fuel_card=fuel_card,
-					fuel_card_2=fuel_card_2,
+					phone=phone,
 					email=email,
 					rate=rate, debt=0, active=active,
 					monday=monday, tuesday=tuesday, wednesday=wednesday,
@@ -224,15 +217,10 @@ def driver_edit(request, slug):
 				else:
 					driver_license 	= ''
 
-				if dr_form.cleaned_data['fuel_card']:
-					fuel_card = dr_form.cleaned_data['fuel_card']
+				if dr_form.cleaned_data['phone']:
+					phone = dr_form.cleaned_data['phone']
 				else:
-					fuel_card = ''
-
-				if dr_form.cleaned_data['fuel_card_2']:
-					fuel_card_2 = dr_form.cleaned_data['fuel_card_2']
-				else:
-					fuel_card_2 = ''
+					phone = ''
 					
 				if dr_form.cleaned_data['email']:
 					email = dr_form.cleaned_data['email']
@@ -277,11 +265,14 @@ def driver_edit(request, slug):
 				if driver.driver_license != driver_license:
 					driver.driver_license = driver_license
 
-				if driver.fuel_card != fuel_card:
-					driver.fuel_card = fuel_card	
+				# if driver.fuel_card != fuel_card:
+				# 	driver.fuel_card = fuel_card	
 
-				if driver.fuel_card_2 != fuel_card_2:
-					driver.fuel_card_2 = fuel_card_2
+				# if driver.fuel_card_2 != fuel_card_2:
+				# 	driver.fuel_card_2 = fuel_card_2
+
+				if driver.phone != phone:
+					driver.phone = phone
 
 				if driver.email != email:
 					driver.email = email	
@@ -1243,153 +1234,6 @@ def service_upload_working_day(request, input_date):
 		return HttpResponse('200')		
 	return HttpResponse('500')
 
-# def get_driver_profiles(offset):
-# 	drivers_list_url = 'https://fleet-api.taxi.yandex.net/v1/parks/driver-profiles/list'
-# 	dr_headers = {'Accept-Language': 'ru',
-#                'X-Client-ID': config('YA_X_CLIENT_ID'),
-#                'X-API-Key': config('YA_X_API_KEY')}
-# 	driver_data = {
-#                 "fields": {
-#                     "account": [],
-#                     "car": [],
-#                     "park": []
-#                 },
-#                 "query": {
-#                       "park": {
-# 						# "driver_profile": {
-# 						# 	"work_status": [
-# 						# 		"working"
-# 						# 	]
-# 						# },
-#                         "id": config('YA_ID')
-#                       },
-#                 },
-#                 "offset": offset,
-#     }
-# 	for i in range(10):
-# 		time.sleep(2)
-# 		answer = requests.post(drivers_list_url, headers=dr_headers, data=json.dumps(driver_data))
-# 		try:
-# 			try:
-# 				with open(log_file_path, 'a+') as file:
-# 					file.write(datetime.now().strftime("%Y-%m-%d %H:%M:%S") + ' ' + drivers_list_url + ' ' + str(answer.status_code) + '\n')
-# 			except:
-# 				pass		
-# 		except:
-# 			pass		
-# 		if answer.status_code == 200:
-# 			break
-# 	if answer:
-# 		response = answer.json()
-# 		return response.get('driver_profiles')
-# 	else:
-# 		return []	
-
-# def get_drivers_transaction(driver_id, fromTime, toTime):
-# 	url = 'https://fleet-api.taxi.yandex.net/v2/parks/driver-profiles/transactions/list'
-# 	headers = {'Accept-Language': 'ru',
-# 			'X-Client-ID': config('YA_X_CLIENT_ID'),
-# 			'X-API-Key': config('YA_X_API_KEY')}
-# 	data = {
-# 		"query": {
-# 			"park": {
-# 				"driver_profile": {
-# 				"id": driver_id
-# 				},
-# 			"id": config('YA_ID'),
-# 			"transaction": {
-# 				"category_ids": ['partner_service_manual',],
-# 				"event_at": {
-# 				"from": fromTime,
-# 				"to": toTime
-# 				}
-# 			}
-# 			}
-# 		}
-# 	}
-# 	answer = None
-# 	for i in range(20):
-# 		time.sleep(1)
-# 		try:
-# 			answer = requests.post(url, headers=headers, data=json.dumps(data),)
-# 			try:
-# 				with open(log_file_path, 'a+') as file:
-# 					file.write(datetime.now().strftime("%Y-%m-%d %H:%M:%S") + ' ' + url + ' ' + str(answer.status_code) + '\n')
-# 			except:
-# 				pass		
-# 		except:
-# 			continue
-# 		if answer.status_code == 200:
-# 			break
-# 		time.sleep(i*3)
-# 	if answer:
-# 		return answer.json().get('transactions')
-# 	else:
-# 		return []
-
-# def get_drivers_working_day(db_driver, current_date):
-# 	working_day = Working_day.objects.filter(driver=db_driver, date=current_date).first()
-# 	if not working_day:
-# 		working_day = Working_day.objects.filter(driver=db_driver).last()
-# 	if working_day:
-# 		return working_day
-# 	else:
-# 		return None	
-
-# def upload_transactions(current_date, fromTime, toTime):
-# 	upload_transactions_data = {}
-# 	profiles = []
-# 	offset = 0
-# 	for i in range(1000):
-# 		part_of_profiles = get_driver_profiles(offset)
-# 		if len(part_of_profiles) > 0:
-# 			profiles += part_of_profiles
-# 			offset += 1000
-# 		else:
-# 			break
-# 	# profiles = profiles[:10]
-# 	missing_drivers = []
-# 	summ_of_transactions = 0
-# 	qty_of_transactions = 0
-# 	for p in profiles:
-# 		driver = (p.get('driver_profile'))
-# 		driver_license = driver.get('driver_license').get('number')
-# 		drivers_transaction = get_drivers_transaction(driver.get('id'), fromTime, toTime)
-# 		if drivers_transaction:
-# 			for item in drivers_transaction:
-# 				db_driver = Driver.objects.filter(driver_license=driver_license).first()
-# 				if db_driver:
-# 					working_day = get_drivers_working_day(db_driver, current_date)
-# 					if working_day:
-# 						working_day.cashless = working_day.cashless + Decimal(abs(float(item['amount'])))
-# 						working_day.save()
-# 					else:
-# 						missing_drivers.append([
-# 							driver_license,
-# 							driver.get('last_name'),
-# 							driver.get('first_name'),
-# 							driver.get('middle_name'),
-# 							item['amount'],
-# 							True
-# 						])
-# 				else:
-# 					missing_drivers.append([
-# 						driver_license,
-# 						driver.get('last_name'),
-# 						driver.get('first_name'),
-# 						driver.get('middle_name'),
-# 						item['amount'],
-# 						False
-# 					])	
-# 				summ_of_transactions += Decimal(abs(float(item['amount'])))
-# 				qty_of_transactions += 1
-# 	upload_transactions_data.update({
-# 		"missing_drivers": missing_drivers,
-# 		"summ_of_transactions": summ_of_transactions,
-# 		"qty_of_transactions": qty_of_transactions
-# 	})
-# 	return upload_transactions_data
-
 def service_upload_yandex(request):
 	if request.user.is_superuser:
 		if request.method == 'POST':
@@ -1400,7 +1244,6 @@ def service_upload_yandex(request):
 				fromTime = yandex_current_date.replace(hour=0, minute=0, second=1).isoformat() + '+03:00'
 				toTime = yandex_current_date.replace(hour=23, minute=59, second=59).isoformat() + '+03:00'
 				if current_date:
-					# upload_transactions_data = upload_transactions(current_date, fromTime, toTime)
 					upload_transactions_data = upload_park_transactions(current_date, fromTime, toTime)
 					qty_of_transactions = upload_transactions_data.get("qty_of_transactions")
 					summ_of_transactions = upload_transactions_data.get("summ_of_transactions")

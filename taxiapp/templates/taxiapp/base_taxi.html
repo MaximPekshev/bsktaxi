@@ -4,11 +4,8 @@
 <html>
 	<head>
     <title>БСК Такси</title>
-    
 		{% load static %}
-
       <link rel="shortcut icon" type="image/x-icon" href="{% static 'images/favicon.ico' %}">
-
   		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
   		<meta name="description" content="">
   		<meta name="viewport" content="width=device-width, initial-scale=1">
@@ -22,9 +19,6 @@
       <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous"></script>
   		<script src="{% static 'js/bootstrap.js' %}"></script>
   		<script src="{% static 'js/bootstrap.min.js' %}"></script>
-
-
-
  	</head>
  	<body>
   <div class="preloader" id="preloader">
@@ -62,7 +56,6 @@
         <a class="theme_button color1" href="{% url 'taxi_show_car_costs' %}">Расходы</a>
         {% if taxiadmin %}
         <a class="theme_button" href="" data-toggle="modal" data-target="#gas_upload"><i class="rt-icon2-download"></i></a>
-        {% comment %} <a class="theme_button" href="{% url 'send_debts' %}"><i class="rt-icon2-mail"></i></a> {% endcomment %}
         {% endif %}
       </div>
     </div>
@@ -98,8 +91,7 @@
                   <th>Номер В/У</th>
                   <th>Номер А/М</th>
                   <th>Марка А/М</th>
-                  <th>Топливная карта</th>
-                  <th>Топливная карта 2</th>
+                  <th>Телефон</th>
                   <th>Email</th>
                   <th>Ставка</th>
                   <th></th>
@@ -114,8 +106,7 @@
                   <td>{{ driver.driver_license }}</td>
                   <td>{{ driver.car.car_number }}</td>
                   <td>{{ driver.car.car_brand }} {{ driver.car.car_model }}</td>
-                  <td>{{ driver.fuel_card }}</td>
-                  <td>{{ driver.fuel_card_2 }}</td>
+                  <td>{{ driver.phone }}</td>
                   <td>{{ driver.email }}</td>
                   <td>{{ driver.rate }}</td>
                   <td></td>
@@ -135,8 +126,7 @@
                   <th>Номер В/У</th>
                   <th>Номер А/М</th>
                   <th>Марка А/М</th>
-                  <th>Топливная карта</th>
-                  <th>Топливная карта 2</th>
+                  <th>Телефон</th>
                   <th>Email</th>
                   <th>Ставка</th>
                   <th></th>
@@ -151,8 +141,7 @@
                   <td>{{ driver.driver_license }}</td>
                   <td>{{ driver.car.car_number }}</td>
                   <td>{{ driver.car.car_brand }} {{ driver.car.car_model }}</td>
-                  <td>{{ driver.fuel_card }}</td>
-                  <td>{{ driver.fuel_card_2 }}</td>
+                  <td>{{ driver.phone }}</td>
                   <td>{{ driver.email }}</td>
                   <td>{{ driver.rate }}</td>
                   <td></td>
@@ -228,20 +217,12 @@
                     <input type="text" class="form-control " name="driver_license" id="driver_license" placeholder="Номер В/У" value="">
                   </div>
 
-                  <div class="form-group validate-required" id="fuel_card">
-                    <label for="fuel_card" class="control-label">
-                      <span class="grey">Топливная карта</span>
+                  <div class="form-group validate-required" id="phone">
+                    <label for="phone" class="control-label">
+                      <span class="grey">Телефон</span>
                     </label>
 
-                    <input type="text" class="form-control " name="fuel_card" id="fuel_card" placeholder="Топливная карта" value="">
-                  </div>
-
-                  <div class="form-group validate-required" id="fuel_card_2">
-                    <label for="fuel_card_2" class="control-label">
-                      <span class="grey">Топливная карта 2</span>
-                    </label>
-
-                    <input type="text" class="form-control " name="fuel_card_2" id="fuel_card_2" placeholder="Топливная карта 2" value="">
+                    <input type="text" class="form-control " name="phone" id="phone" placeholder="Телефон" value="">
                   </div>
 
                   <div class="form-group validate-required" id="email">

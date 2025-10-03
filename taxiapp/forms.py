@@ -6,13 +6,12 @@ class NewDriverForm(forms.Form):
 	last_name  		= forms.CharField(max_length = 30)
 	third_name  	= forms.CharField(max_length = 30, required=False)
 	driver_license 	= forms.CharField(max_length = 15, required=False)
+	phone	 		= forms.CharField(max_length = 20, required=False)
 	fuel_card 		= forms.CharField(max_length = 30, required=False)
 	fuel_card_2 	= forms.CharField(max_length = 30, required=False)
 	email	 		= forms.CharField(max_length = 30, required=False)
 	rate			= forms.CharField(max_length = 15)
-
 	active 			= forms.BooleanField(required=False)
-
 	monday 			= forms.BooleanField(required=False)
 	tuesday 		= forms.BooleanField(required=False)
 	wednesday 		= forms.BooleanField(required=False)
