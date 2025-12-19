@@ -79,7 +79,7 @@ def get_park_transactions(fromTime, toTime):
 			"park": {
 				"id": config('YA_ID'),
 				"transaction": {
-					"category_ids": ['partner_service_external_event_rent'],
+					"category_ids": ['partner_service_manual', 'partner_service_external_event_rent'],
 					"event_at": {
 						"from": fromTime,
 						"to": toTime
