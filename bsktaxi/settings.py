@@ -21,6 +21,8 @@ ALLOWED_HOSTS = [
     'www.orenburg.bsktaxi.ru',
     'saratov.bsktaxi.ru', 
     'www.saratov.bsktaxi.ru',
+    'orenburg2.bsktaxi.ru', 
+    'www.orenburg2.bsktaxi.ru',
 ]
 
 # Application definition
