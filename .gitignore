@@ -12,4 +12,13 @@ venv
 .belgorod_env
 .voronezh2_env
 .orenburg_env
+.belgorod_bsk.belgorod-31_env
+.new_belgorod_env
+.orenburg2_env
+.saratov_bsk-saratov_env
+.saratov_bsksaratov_env
+.voronezh_divichenko-oi_env
+.voronezh2_ divichenko-oi_env
+.voronezh2_bsctaxi_env
+.voronezh_bsctaxi_env
 passenger_wsgi.py
