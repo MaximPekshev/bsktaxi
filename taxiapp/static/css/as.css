@@ -1,3 +1,13 @@
+.header_menu {
+  display: flex;
+  justify-content: space-around;
+  background-color: #fff;
+}
+
+.header_menu H2 {
+  text-align: right;
+}
+
 .table_sticky {
     position: relative;
     z-index: 1;
@@ -7,4 +17,32 @@
     position: sticky;
     top: 0;
     background-color: #fcca03;
+}
+
+.as-pagination {
+    display: flex;
+    justify-content: end;
+    text-align: center;
+}
+.as-pagination .pagination a,
+.as-pagination .pagination .pagination-dots {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    margin: 0 2px;
+    background-color: #fcca03;
+    color: #000;
+    text-decoration: none;
+    border-radius: 4px;
+    box-sizing: border-box;
+}
+.as-pagination .pagination a.current-page,
+.as-pagination .pagination .pagination-dots {
+    background-color: #000;
+    color: #fff;
+}
+.as-pagination .pagination .pagination-dots {
+    cursor: default;
 }

@@ -21,6 +21,7 @@
   <div class="container col-lg-12">
       <div class="row">
           <div class="col-sm-12">
+                {% include 'taxiapp/includes/pagination.html' with page_obj=working_days page_range=working_days_page_range %}
                 <table class="table_template darklinks table-hover">
                   <thead class="thead-dark">
                     <tr>
@@ -55,16 +56,16 @@
                   	{% endfor %}
                   </tbody>
                 </table>
+                {% include 'taxiapp/includes/pagination.html' with page_obj=working_days page_range=working_days_page_range %}
                 {% if working_days %}
                 <table class="table_template darklinks table-hover">
-                  <thead class="thead-dark">
-                    <tr>
-        			<th style="text-align: right" width="90%">Итого:</th>
-        			<th style="text-align: right">{{ driver.debt }}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                  </tbody>
+                    <thead class="thead-dark">
+                      <tr>
+                        <th style="text-align: right">Долг: {{ driver.debt }}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                    </tbody>
                 </table>
                 {% endif %}
           </div>

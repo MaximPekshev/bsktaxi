@@ -1,88 +1,58 @@
-<!DOCTYPE html>
-<html class="no-js">
+{% extends 'taxiapp/base_taxi.html' %}
 
-<html>
-	<head>
-    <title>БСК Такси</title>
-		{% load static %}
-      <link rel="shortcut icon" type="image/x-icon" href="{% static 'images/favicon.ico' %}">
-  		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-  		<meta name="description" content="">
-  		<meta name="viewport" content="width=device-width, initial-scale=1">
-  		<link rel="stylesheet" href="{% static 'css/bootstrap.css' %}">
-  		<link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
-      <link rel="stylesheet" href="{% static 'css/main.css' %}" id="color-switcher-link">
-      <link rel="stylesheet" href="{% static 'css/animations.css' %}">
-      <link rel="stylesheet" href="{% static 'css/fonts.css' %}">
-      <link rel="stylesheet" href="{% static 'css/as.css' %}">
-      <script src="{% static 'js/vendor/modernizr-2.6.2.min.js' %}"></script>
-      <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous"></script>
-  		<script src="{% static 'js/bootstrap.js' %}"></script>
-  		<script src="{% static 'js/bootstrap.min.js' %}"></script>
- 	</head>
- 	<body>
-  <div class="preloader" id="preloader">
-    <div class="preloader_image"></div>
-  </div>
-  <section class="page_topline ds ms columns_margin_0">
-    <div class="container">
-      <div class="row">
-        <div class="col-sm-6 text-center text-sm-left">
-          <p class="fontsize_12 grey">
-          </div>
-        </div>
-      </div>
-    </section>
+{% load static %}
 
- 	{% block content %}
-  <section class="ls ms">
+{% block content %}
+
+<section class="ls ms">
     <div class="header_menu">
-      <div class="container col-lg-8">
-        <div class="row">
-          <div class="col-lg-8 col-12">
-            <a class="theme_button" href="" data-toggle="modal" data-target="#addnewdriver"><i class="rt-icon2-add"></i></a>
-            <a class="theme_button color1" href="{% url 'logout' %}">Выйти</a>
-            <a class="theme_button color1" href="{% url 'taxi_show_cashbox' %}">Касса</a>
-            <a class="theme_button color1" href="{% url 'taxi_show_history' %}">История</a>
-            {% if user.is_superuser %}
-            <a class="theme_button color1" href="{% url 'taxi_admin_service_menu' %}">Service</a>
-            {% endif %}
-          </div>
-          
-        </div>
-        <div class="row">
-          <div class="col-lg-8 col-12">
-            <a class="theme_button color1" href="{% url 'show_cars' %}">Авто</a>
-            <a class="theme_button color1" href="{% url 'taxi_show_car_costs' %}">Расходы</a>
-            {% if taxiadmin %}
-            <a class="theme_button" href="" data-toggle="modal" data-target="#gas_upload"><i class="rt-icon2-download"></i></a>
-            {% endif %}
-          </div>
-        </div>
-      </div> 
-      <div class="container col-lg-4">
-        <div class="row">
-          <div class="col-lg-12 col-12">
-            <h2>авто в работе: <span style="color: #fcca03">{{ cars_works }}</span></h2>
-          </div>
+        <div class="container col-lg-8">
+            <div class="row">
+            <div class="col-lg-8 col-12">
+                <a class="theme_button" href="" data-toggle="modal" data-target="#addnewdriver"><i class="rt-icon2-add"></i></a>
+                <a class="theme_button color1" href="{% url 'logout' %}">Выйти</a>
+                <a class="theme_button color1" href="{% url 'taxi_show_cashbox' %}">Касса</a>
+                <a class="theme_button color1" href="{% url 'taxi_show_history' %}">История</a>
+                {% if user.is_superuser %}
+                <a class="theme_button color1" href="{% url 'taxi_admin_service_menu' %}">Service</a>
+                {% endif %}
+            </div>
+            
+            </div>
+            <div class="row">
+            <div class="col-lg-8 col-12">
+                <a class="theme_button color1" href="{% url 'show_cars' %}">Авто</a>
+                <a class="theme_button color1" href="{% url 'taxi_show_car_costs' %}">Расходы</a>
+                {% if taxiadmin %}
+                <a class="theme_button" href="" data-toggle="modal" data-target="#gas_upload"><i class="rt-icon2-download"></i></a>
+                {% endif %}
+            </div>
+            </div>
         </div> 
-      </div>
-  </div>
+        <div class="container col-lg-4">
+            <div class="row">
+            <div class="col-lg-12 col-12">
+                <h2>авто в работе: <span style="color: #fcca03">{{ cars_works }}</span></h2>
+            </div>
+            </div> 
+        </div>
+    </div>
   <div class="container col-lg-12">
     <div class="row">
       <div class="col-lg-12">
 
         <ul class="nav nav-tabs" role="tablist">
-          <li class="active">
+          <li>
             <a href="{% url 'taxi_show_index' %}">Работают <br><span style="font-family:'FontAwesome'; font-size: 1.2em;">{{ debt_of_works }}</span></a>
           </li>
-          <li>
+          <li class="active">
             <a href="{% url 'index_dismissed' %}">Уволены <br><span style="font-family:'FontAwesome'; font-size: 1.2em;">{{ debt_of_fired }}</span></a>
           </li>
         </ul>
 
         <div class="tab-content top-color-border">
           <div class="tab-pane fade in active">
+            {% include 'taxiapp/includes/pagination.html' with page_obj=drivers_fired page_range=drivers_fired_page_range %}
             <table class="table_template darklinks table-hover">
               <thead class="thead-dark">
                 <tr>
@@ -99,9 +69,9 @@
                 </tr>
               </thead>
               <tbody>
-                {% for driver in drivers_works %}
+                {% for driver in drivers_fired %}
                 <tr>
-                  <td>{{ forloop.counter }}</td>
+                  <td>{{ drivers_fired.start_index|add:forloop.counter0 }}</td>
                   <td><a href="{% url 'show_driver' slug=driver.slug %}">{{ driver.second_name }} {{ driver.first_name }}</a></td>
                   <td>{{ driver.driver_license }}</td>
                   <td>{{ driver.car.car_number }}</td>
@@ -115,7 +85,9 @@
                 {% endfor %}
               </tbody>
             </table>
+            {% include 'taxiapp/includes/pagination.html' with page_obj=drivers_fired page_range=drivers_fired_page_range %}
           </div>
+
         </div>
         
       </div>
@@ -258,7 +230,6 @@
                           <input type="checkbox" id="checkboxSN" value="ВС" name="sunday">
                           <label for="checkboxSN">ВС</label>
                         </li>
-
                       </ul>
                     </div>    
                   </div>
@@ -325,35 +296,4 @@
   </div>
 </div>
 
- 	{% endblock %}
-
-
-
-
- 	
- 	<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
- 	<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
-
-  <script src="{% static 'js/compressed.js' %}"></script>
-  <script src="{% static 'js/main.js' %}"></script>
-  {% block custom_scripts %}
-  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-  <script type="text/javascript">
-    window.onload = function() {
-        document.getElementById('upload_button').addEventListener('click', checkUploadFile, false);
-    }
-
-    const checkUploadFile = async (event) => {
-
-        let fuelErrorPlace = document.getElementById('fuelErrorPlace');
-        fuelErrorPlace.innerHTML = "";
-        let gas_file = document.getElementById('gas_file');
-        if (gas_file.value == "") {
-          event.preventDefault();
-          fuelErrorPlace.innerHTML ='<p style="color:black; text-align: center;">Выберите файл для загрузки данных!!</p>';
-        };
-    };
-  </script>  
-  {% endblock %}
- 	</body>	
-</html>
+{% endblock %}

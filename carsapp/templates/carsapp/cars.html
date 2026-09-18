@@ -18,6 +18,7 @@
     <div class="row">
       <div class="col-sm-12">
        <div class="tab-pane">
+        {% include 'taxiapp/includes/pagination.html' with page_obj=cars page_range=cars_page_range %}
         <table class="table_template darklinks table-hover table_sticky">
           <thead class="thead-dark">
             <tr>
@@ -36,6 +37,7 @@
            {% endfor %}
          </tbody>
        </table>
+       {% include 'taxiapp/includes/pagination.html' with page_obj=cars page_range=cars_page_range %}
      </div>
    </div>
  </div>

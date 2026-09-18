@@ -15,10 +15,12 @@ from .views import taxi_show_cost_report
 from .views import taxi_admin_service_menu
 from .views import service_upload_working_day
 from .views import service_upload_yandex
+from .views import index_dismissed
 
 urlpatterns = [
 
 	path('', 						taxi_show_index, name='taxi_show_index'),
+    path('dismissed/', 				index_dismissed, name='index_dismissed'),
 	path('cashbox/', 				taxi_show_cashbox, name='taxi_show_cashbox'),
 	path('history/', 				taxi_show_history, name='taxi_show_history'),
 	path('incass/', 				taxi_incass, name='taxi_incass'),

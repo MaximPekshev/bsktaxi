@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect
 from django.http import HttpResponse, JsonResponse
 from django.contrib.auth.models import Group
 from django.contrib				import messages
+from django.core.paginator import Paginator
 from django.db.models import Sum
 from django.utils import timezone
 from django.db.models import Sum
@@ -29,297 +30,181 @@ from bsktaxi.settings import BASE_DIR
 log_file_path = os.path.join(BASE_DIR, 'log/log.txt')
 
 def culc_debt(drivers):
-	debt=0
-	for driver in drivers:
-		debt += driver.debt
-	return debt
+	return sum(driver.debt for driver in drivers)
+
+def index_dismissed(request):
+	users_in_group = Group.objects.get(name="taxiadmin").user_set.all()
+	users_in_group_collector = Group.objects.get(name="taxicollector").user_set.all()
+
+	taxiadmin = request.user in users_in_group
+
+	if not (request.user.is_authenticated and (taxiadmin or request.user in users_in_group_collector)):
+		return render(request, 'authapp/login.html')
+
+	drivers_works = Driver.objects.filter(active=True).order_by('second_name')
+	drivers_fired = Driver.objects.filter(active=False).order_by('second_name')
+
+	cars_works = []
+	for dr in drivers_works:
+		if dr.car and dr.car not in cars_works:
+			cars_works.append(dr.car)
+
+	drivers_fired_paginator = Paginator(drivers_fired, 100)
+	drivers_fired_page = drivers_fired_paginator.get_page(request.GET.get('page'))
+
+	context = {
+		'drivers_works': drivers_works,
+		'debt_of_works': culc_debt(drivers_works),
+		'drivers_fired': drivers_fired_page,
+		'drivers_fired_page_range': list(drivers_fired_paginator.get_elided_page_range(drivers_fired_page.number, on_each_side=2, on_ends=1)),
+		'debt_of_fired': culc_debt(drivers_fired),
+		'cars': Car.objects.all(),
+		'cars_works': len(cars_works),
+		'taxiadmin': taxiadmin,
+	}
+
+	return render(request, 'taxiapp/dismissed.html', context)
 
 def taxi_show_index(request):
-
-	taxiadmin = False
-
 	users_in_group = Group.objects.get(name="taxiadmin").user_set.all()
-
-	if request.user in users_in_group:
-
-		taxiadmin = True
-
 	users_in_group_collector = Group.objects.get(name="taxicollector").user_set.all()
 
-	if request.user.is_authenticated and (request.user in users_in_group or request.user in users_in_group_collector):
+	taxiadmin = request.user in users_in_group
 
-		drivers_works = Driver.objects.filter(active=True).order_by('second_name')
-
-		cars_works = []
-
-		for dr in drivers_works:
-			if dr.car in cars_works:
-				pass
-			else:
-				if dr.car:
-					cars_works.append(dr.car)
-
-		debt_of_works = culc_debt(drivers_works)
-
-		drivers_fired = Driver.objects.filter(active=False).order_by('second_name')
-
-		debt_of_fired = culc_debt(drivers_fired)
-
-		cars = Car.objects.all()
-
-		context = {
-
-			'drivers_works':drivers_works,
-			'debt_of_works':debt_of_works,
-			'drivers_fired':drivers_fired,
-			'debt_of_fired':debt_of_fired,
-			'cars':cars,
-			'cars_works': len(cars_works),
-			'taxiadmin': taxiadmin,
-
-		}
-
-		return render(request, 'taxiapp/base_taxi.html', context)
-
-	else:
-		
+	if not (request.user.is_authenticated and (taxiadmin or request.user in users_in_group_collector)):
 		return render(request, 'authapp/login.html')
+
+	drivers_works = Driver.objects.filter(active=True).order_by('second_name')
+	drivers_fired = Driver.objects.filter(active=False).order_by('second_name')
+
+	cars_works = []
+	for dr in drivers_works:
+		if dr.car and dr.car not in cars_works:
+			cars_works.append(dr.car)
+
+	context = {
+		'drivers_works': drivers_works,
+		'debt_of_works': culc_debt(drivers_works),
+		'drivers_fired': drivers_fired,
+		'debt_of_fired': culc_debt(drivers_fired),
+		'cars': Car.objects.all(),
+		'cars_works': len(cars_works),
+		'taxiadmin': taxiadmin,
+	}
+
+	return render(request, 'taxiapp/base_taxi.html', context)
 	
 def show_driver(request, slug):
-
 	users_in_group = Group.objects.get(name="taxiadmin").user_set.all()
-
 	users_in_group_collector = Group.objects.get(name="taxicollector").user_set.all()
 
-	if request.user.is_authenticated and (request.user in users_in_group or request.user in users_in_group_collector):
-
-		driver = Driver.objects.get(slug = slug)
-
-		working_days = Working_day.objects.filter(driver = driver).order_by("-date")
-
-		if driver.car:
-			cars = Car.objects.exclude(slug=driver.car.slug).order_by("car_number")
-		else:
-			cars = Car.objects.all().order_by("car_number")
-
-
-
-		context = {
-
-			'working_days': working_days, 'driver': driver, 'cars':cars,
-
-		}
-
-		return render(request, 'taxiapp/driver.html', context)
-
-	else:
+	if not (request.user.is_authenticated and (request.user in users_in_group or request.user in users_in_group_collector)):
 		messages.info(request, 'У Вас не достаточно прав для доступа в данный раздел! Обратитесь к администратору!')
 		return render(request, 'authapp/login.html')
 
-def driver_add_new(request):
+	driver = Driver.objects.get(slug=slug)
+	working_days = Working_day.objects.filter(driver=driver).order_by("-date")
 
+	if driver.car:
+		cars = Car.objects.exclude(slug=driver.car.slug).order_by("car_number")
+	else:
+		cars = Car.objects.all().order_by("car_number")
+
+	working_days_paginator = Paginator(working_days, 100)
+	working_days_page = working_days_paginator.get_page(request.GET.get('page'))
+
+	context = {
+		'working_days': working_days_page,
+		'working_days_page_range': list(working_days_paginator.get_elided_page_range(working_days_page.number, on_each_side=2, on_ends=1)),
+		'driver': driver,
+		'cars': cars,
+	}
+
+	return render(request, 'taxiapp/driver.html', context)
+
+def driver_add_new(request):
 	users_in_group = Group.objects.get(name="taxiadmin").user_set.all()
 
-	if request.user.is_authenticated and request.user in users_in_group:
-		
-		if request.method == 'POST':
-
-			dr_form = NewDriverForm(request.POST)
-
-			if dr_form.is_valid():
-
-				first_name 			= dr_form.cleaned_data['first_name']
-				last_name 			= dr_form.cleaned_data['last_name']
-				car_obj 			= dr_form.cleaned_data['car_obj']
-
-				if car_obj:
-					car = Car.objects.get(car_number=car_obj)
-				else:
-					car = None
-						
-				rate 				= float(dr_form.cleaned_data['rate'].replace(',','.'))
-
-				if dr_form.cleaned_data['third_name']:
-					third_name = dr_form.cleaned_data['third_name']
-				else:
-					third_name = ''
-
-
-				if dr_form.cleaned_data['driver_license']:
-					driver_license = dr_form.cleaned_data['driver_license']
-				else:
-					driver_license = ''
-
-				if dr_form.cleaned_data['phone']:
-					phone = dr_form.cleaned_data['phone']
-				else:
-					phone = ''
-
-				if dr_form.cleaned_data['email']:
-					email = dr_form.cleaned_data['email']
-				else:
-					email = ''	
-
-				active 				= dr_form.cleaned_data['active']	
-
-				monday 				= dr_form.cleaned_data['monday']
-				tuesday 			= dr_form.cleaned_data['tuesday']
-				wednesday 			= dr_form.cleaned_data['wednesday']
-				thursday 			= dr_form.cleaned_data['thursday']
-				friday 				= dr_form.cleaned_data['friday']
-				saturday 			= dr_form.cleaned_data['saturday']
-				sunday 				= dr_form.cleaned_data['sunday']
-
-				new_driver = Driver(
-					first_name=first_name, second_name=last_name, 
-					third_name=third_name,
-					driver_license=driver_license,
-					phone=phone,
-					email=email,
-					rate=rate, debt=0, active=active,
-					monday=monday, tuesday=tuesday, wednesday=wednesday,
-					thursday=thursday, friday=friday, saturday=saturday, sunday=sunday,
-					car=car,
-					)
-				new_driver.save()
-
-				return redirect('taxi_show_index')
-		else:
-
-			return redirect('taxi_show_index')
-	else:
-
+	if not (request.user.is_authenticated and request.user in users_in_group):
 		messages.info(request, 'У Вас не достаточно прав для доступа в данный раздел! Обратитесь к администратору!')
-		return render(request, 'authapp/login.html')		
+		return render(request, 'authapp/login.html')
+
+	if request.method != 'POST':
+		return redirect('taxi_show_index')
+
+	dr_form = NewDriverForm(request.POST)
+
+	if dr_form.is_valid():
+		car_obj = dr_form.cleaned_data['car_obj']
+		car = Car.objects.get(car_number=car_obj) if car_obj else None
+		rate = float(dr_form.cleaned_data['rate'].replace(',', '.'))
+
+		new_driver = Driver(
+			first_name=dr_form.cleaned_data['first_name'],
+			second_name=dr_form.cleaned_data['last_name'],
+			third_name=dr_form.cleaned_data['third_name'] or '',
+			driver_license=dr_form.cleaned_data['driver_license'] or '',
+			phone=dr_form.cleaned_data['phone'] or '',
+			email=dr_form.cleaned_data['email'] or '',
+			rate=rate, debt=0, active=dr_form.cleaned_data['active'],
+			monday=dr_form.cleaned_data['monday'],
+			tuesday=dr_form.cleaned_data['tuesday'],
+			wednesday=dr_form.cleaned_data['wednesday'],
+			thursday=dr_form.cleaned_data['thursday'],
+			friday=dr_form.cleaned_data['friday'],
+			saturday=dr_form.cleaned_data['saturday'],
+			sunday=dr_form.cleaned_data['sunday'],
+			car=car,
+			)
+		new_driver.save()
+
+		return redirect('taxi_show_index')
 
 def driver_edit(request, slug):
-			
 	users_in_group = Group.objects.get(name="taxiadmin").user_set.all()
 
-	if request.user.is_authenticated and request.user in users_in_group:
-		
-		if request.method == 'POST':
-
-			dr_form = NewDriverForm(request.POST)
-
-			if dr_form.is_valid():
-
-				first_name 			= dr_form.cleaned_data['first_name']
-				last_name 			= dr_form.cleaned_data['last_name']
-
-				if dr_form.cleaned_data['third_name']:
-					third_name 	= dr_form.cleaned_data['third_name']
-				else:
-					third_name 	= ''
-
-				if dr_form.cleaned_data['driver_license']:
-					driver_license 	= dr_form.cleaned_data['driver_license']
-				else:
-					driver_license 	= ''
-
-				if dr_form.cleaned_data['phone']:
-					phone = dr_form.cleaned_data['phone']
-				else:
-					phone = ''
-					
-				if dr_form.cleaned_data['email']:
-					email = dr_form.cleaned_data['email']
-				else:
-					email = ''		
-
-
-				car_obj 			= dr_form.cleaned_data['car_obj']
-
-				if car_obj:
-					try:
-						car = Car.objects.get(car_number=car_obj)
-					except Car.DoesNotExist:
-						car = None
-				else:
-					car = None
-
-
-				rate 				= float(dr_form.cleaned_data['rate'].replace(',','.'))
-
-				active 				= dr_form.cleaned_data['active']
-
-				monday 				= dr_form.cleaned_data['monday']
-				tuesday 			= dr_form.cleaned_data['tuesday']
-				wednesday 			= dr_form.cleaned_data['wednesday']
-				thursday 			= dr_form.cleaned_data['thursday']
-				friday 				= dr_form.cleaned_data['friday']
-				saturday 			= dr_form.cleaned_data['saturday']
-				sunday 				= dr_form.cleaned_data['sunday']
-
-				driver = Driver.objects.get(slug=slug)
-
-				if driver.first_name != first_name:
-					driver.first_name = first_name
-
-				if driver.second_name != last_name:
-					driver.second_name = last_name	
-
-				if driver.third_name != third_name:
-					driver.third_name = third_name		
-
-				if driver.driver_license != driver_license:
-					driver.driver_license = driver_license
-
-				# if driver.fuel_card != fuel_card:
-				# 	driver.fuel_card = fuel_card	
-
-				# if driver.fuel_card_2 != fuel_card_2:
-				# 	driver.fuel_card_2 = fuel_card_2
-
-				if driver.phone != phone:
-					driver.phone = phone
-
-				if driver.email != email:
-					driver.email = email	
-
-				if driver.rate != rate:
-					driver.rate = rate	
-
-				if driver.active != active:
-					driver.active = active
-
-				if driver.monday != monday:
-					driver.monday = monday
-
-				if driver.tuesday != tuesday:
-					driver.tuesday = tuesday
-
-				if driver.wednesday != wednesday:
-					driver.wednesday = wednesday
-
-				if driver.thursday != thursday:
-					driver.thursday = thursday
-
-				if driver.friday != friday:
-					driver.friday = friday
-
-				if driver.saturday != saturday:
-					driver.saturday = saturday
-
-				if driver.sunday != sunday:
-					driver.sunday = sunday
-
-				if driver.car != car:
-					driver.car = car
-
-
-				driver.save()
-
-				current_path = request.META['HTTP_REFERER']
-				return redirect(current_path)
-
-		else:
-
-			return redirect('taxi_show_index')
-	else:
-
+	if not (request.user.is_authenticated and request.user in users_in_group):
 		messages.info(request, 'У Вас не достаточно прав для доступа в данный раздел! Обратитесь к администратору!')
-		return render(request, 'authapp/login.html')			
+		return render(request, 'authapp/login.html')
+
+	if request.method != 'POST':
+		return redirect('taxi_show_index')
+
+	dr_form = NewDriverForm(request.POST)
+
+	if dr_form.is_valid():
+		car_obj = dr_form.cleaned_data['car_obj']
+		if car_obj:
+			try:
+				car = Car.objects.get(car_number=car_obj)
+			except Car.DoesNotExist:
+				car = None
+		else:
+			car = None
+
+		driver = Driver.objects.get(slug=slug)
+
+		driver.first_name = dr_form.cleaned_data['first_name']
+		driver.second_name = dr_form.cleaned_data['last_name']
+		driver.third_name = dr_form.cleaned_data['third_name'] or ''
+		driver.driver_license = dr_form.cleaned_data['driver_license'] or ''
+		driver.phone = dr_form.cleaned_data['phone'] or ''
+		driver.email = dr_form.cleaned_data['email'] or ''
+		driver.rate = float(dr_form.cleaned_data['rate'].replace(',', '.'))
+		driver.active = dr_form.cleaned_data['active']
+		driver.monday = dr_form.cleaned_data['monday']
+		driver.tuesday = dr_form.cleaned_data['tuesday']
+		driver.wednesday = dr_form.cleaned_data['wednesday']
+		driver.thursday = dr_form.cleaned_data['thursday']
+		driver.friday = dr_form.cleaned_data['friday']
+		driver.saturday = dr_form.cleaned_data['saturday']
+		driver.sunday = dr_form.cleaned_data['sunday']
+		driver.car = car
+
+		driver.save()
+
+		current_path = request.META['HTTP_REFERER']
+		return redirect(current_path)
 
 
 def taxi_show_cashbox(request):

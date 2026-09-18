@@ -1,0 +1,19 @@
+{% if page_obj.paginator.num_pages > 1 %}
+<div class="fl-wrap post-container as-pagination">
+    <div class="pagination">
+        {% if page_obj.has_previous %}
+        <a href="?page={{ page_obj.previous_page_number }}"><i class="fa fa-caret-left"></i></a>
+        {% endif %}
+        {% for page_num in page_range %}
+        {% if page_num == page_obj.paginator.ELLIPSIS %}
+        <span class="pagination-dots">{{ page_num }}</span>
+        {% else %}
+        <a href="?page={{ page_num }}" class="{% if page_num == page_obj.number %}current-page{% endif %}">{{ page_num }}</a>
+        {% endif %}
+        {% endfor %}
+        {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}"><i class="fa fa-caret-right"></i></a>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
