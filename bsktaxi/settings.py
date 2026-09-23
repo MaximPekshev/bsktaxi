@@ -1,4 +1,5 @@
 from pathlib import Path
+import json
 import os
 
 from decouple import config
@@ -118,7 +119,13 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 CRONTAB_DJANGO_PROJECT_NAME = config('CRONTAB_DJANGO_PROJECT_NAME')
 
-CRONJOBS = [
+DEFAULT_CRONJOBS = [
     ('30 0 * * *', 'taxiapp.cron.creating_working_days'),
     ('55 2 * * *', 'taxiapp.cron.transactions_yandex'),
 ]
+
+CRONJOBS = config(
+    'CRONJOBS',
+    default=json.dumps(DEFAULT_CRONJOBS),
+    cast=lambda value: [tuple(job) for job in json.loads(value)],
+)
